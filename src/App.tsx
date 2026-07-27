@@ -1518,21 +1518,29 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
 
             {/* Live Ecosystem Health Board */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center space-y-1 shadow-xs">
-                <span className="text-xs font-bold text-[#51615a]">Mapped Initiatives</span>
-                <p className="text-3xl font-extrabold text-[#29B6BD]">{organizations.length}</p>
+              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
+                <div className="min-h-[28px] flex items-center justify-center">
+                  <span className="text-xs font-bold text-[#51615a] leading-tight">Mapped Initiatives</span>
+                </div>
+                <p className="text-3xl font-extrabold text-[#29B6BD] mt-1">{organizations.length}</p>
               </div>
-              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center space-y-1 shadow-xs">
-                <span className="text-xs font-bold text-[#51615a]">Gaps & Offers</span>
-                <p className="text-3xl font-extrabold text-[#3EB049]">{gapsOffers.length}</p>
+              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
+                <div className="min-h-[28px] flex items-center justify-center">
+                  <span className="text-xs font-bold text-[#51615a] leading-tight">Gaps & Offers</span>
+                </div>
+                <p className="text-3xl font-extrabold text-[#3EB049] mt-1">{gapsOffers.length}</p>
               </div>
-              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center space-y-1 shadow-xs">
-                <span className="text-xs font-bold text-[#51615a]">Agreed Commitments</span>
-                <p className="text-3xl font-extrabold text-[#F89E1B]">{commitments.length}</p>
+              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
+                <div className="min-h-[28px] flex items-center justify-center">
+                  <span className="text-xs font-bold text-[#51615a] leading-tight">Agreed Commitments</span>
+                </div>
+                <p className="text-3xl font-extrabold text-[#F89E1B] mt-1">{commitments.length}</p>
               </div>
-              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center space-y-1 shadow-xs">
-                <span className="text-xs font-bold text-[#51615a]">Evidence Logs</span>
-                <p className="text-3xl font-extrabold text-[#888E8F]">{evidenceLearning.length}</p>
+              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
+                <div className="min-h-[28px] flex items-center justify-center">
+                  <span className="text-xs font-bold text-[#51615a] leading-tight">Evidence Logs</span>
+                </div>
+                <p className="text-3xl font-extrabold text-[#888E8F] mt-1">{evidenceLearning.length}</p>
               </div>
             </div>
 
@@ -1719,27 +1727,35 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
 
                 {/* KPI Cards Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 max-w-2xl">
-                  <div className="bg-[#f8f9f8] border border-[#e1e1db] rounded-xl p-3.5 text-center">
-                    <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider">Mapped Programs</p>
+                  <div className="bg-[#f8f9f8] border border-[#e1e1db] rounded-xl p-3.5 text-center flex flex-col justify-between">
+                    <div className="min-h-[28px] flex items-center justify-center">
+                      <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider leading-tight">Mapped Programs</p>
+                    </div>
                     <p className="text-xl font-extrabold text-[#29B6BD] mt-1">{(activeTab !== 'All' ? stats.tabCounts[activeTab] : stats.totalCount) || 0}</p>
                   </div>
 
-                  <div className="bg-[#f8f9f8] border border-[#e1e1db] rounded-xl p-3.5 text-center">
-                    <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider">Active Gaps</p>
+                  <div className="bg-[#f8f9f8] border border-[#e1e1db] rounded-xl p-3.5 text-center flex flex-col justify-between">
+                    <div className="min-h-[28px] flex items-center justify-center">
+                      <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider leading-tight">Active Gaps</p>
+                    </div>
                     <p className="text-xl font-extrabold text-[#3EB049] mt-1">
                       {gapsOffers.filter(g => (activeTab === 'All' || g.assignedTab === activeTab) && g.type === 'Gap').length}
                     </p>
                   </div>
 
-                  <div className="bg-[#f8f9f8] border border-[#e1e1db] rounded-xl p-3.5 text-center">
-                    <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider">Active Offers</p>
+                  <div className="bg-[#f8f9f8] border border-[#e1e1db] rounded-xl p-3.5 text-center flex flex-col justify-between">
+                    <div className="min-h-[28px] flex items-center justify-center">
+                      <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider leading-tight">Active Offers</p>
+                    </div>
                     <p className="text-xl font-extrabold text-[#F89E1B] mt-1">
                       {gapsOffers.filter(g => (activeTab === 'All' || g.assignedTab === activeTab) && g.type === 'Offer').length}
                     </p>
                   </div>
 
-                  <div className="bg-[#f8f9f8] border border-[#e1e1db] rounded-xl p-3.5 text-center">
-                    <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider">Commitments</p>
+                  <div className="bg-[#f8f9f8] border border-[#e1e1db] rounded-xl p-3.5 text-center flex flex-col justify-between">
+                    <div className="min-h-[28px] flex items-center justify-center">
+                      <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider leading-tight">Commitments</p>
+                    </div>
                     <p className="text-xl font-extrabold text-[#888E8F] mt-1">
                       {commitments.filter(c => activeTab === 'All' || c.assignedTab === activeTab).length}
                     </p>
