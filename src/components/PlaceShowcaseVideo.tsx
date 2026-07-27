@@ -13,8 +13,7 @@ export const PlaceShowcaseVideo: React.FC = () => {
   
   // Image fallbacks
   const primaryPhoto = '/wales_workshop_exact_photo_1785063346660.jpg';
-  const secondaryPhoto = '/wales_workshop_thumbnail_1785063122767.jpg';
-  const tertiaryPhoto = '/OD-1.jpg';
+
   
   const [photoUrl, setPhotoUrl] = useState(primaryPhoto);
   const [videoError, setVideoError] = useState(false);
