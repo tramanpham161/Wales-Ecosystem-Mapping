@@ -8,8 +8,8 @@ import {
   Video
 } from 'lucide-react';
 
-import exactPhoto from '../assets/images/wales_workshop_exact_photo_1785063346660.jpg';
-import thumbnailPhoto from '../assets/images/wales_workshop_thumbnail_1785063122767.jpg';
+const exactPhoto = '/wales_workshop_exact_photo_1785063346660.jpg';
+const thumbnailPhoto = '/wales_workshop_thumbnail_1785063122767.jpg';
 
 export const PlaceShowcaseVideo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
