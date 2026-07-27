@@ -1,17 +1,36 @@
 import React, { useState } from 'react';
 import { 
   Play, 
-  Pause, 
   Quote, 
   ExternalLink,
   Sparkles,
-  Heart
+  Heart,
+  Video
 } from 'lucide-react';
-const thumbnailPath = '/wales_workshop_exact_photo_1785063346660.jpg';
-const videoPath = '/wales_workshop_video.mp4';
 
 export const PlaceShowcaseVideo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
+  
+  // Image fallbacks
+  const primaryPhoto = '/wales_workshop_exact_photo_1785063346660.jpg';
+  const secondaryPhoto = '/wales_workshop_thumbnail_1785063122767.jpg';
+  const tertiaryPhoto = '/OD-1.jpg';
+  
+  const [photoUrl, setPhotoUrl] = useState(primaryPhoto);
+  const [videoError, setVideoError] = useState(false);
+
+  // Exact file path as named by user in public folder
+  const exactVideoPath = encodeURI('/OAHA_WALES PLACE BASED WORKSHOP 2026_MAIN WRAP-UP FILM_V1.3-2.mp4');
+  const fallbackVideoPath = '/wales_workshop_video.mp4';
+  const sampleDemoVideo = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+
+  const handleImageError = () => {
+    if (photoUrl === primaryPhoto) {
+      setPhotoUrl(secondaryPhoto);
+    } else if (photoUrl === secondaryPhoto) {
+      setPhotoUrl(tertiaryPhoto);
+    }
+  };
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
@@ -34,42 +53,60 @@ export const PlaceShowcaseVideo: React.FC = () => {
                 onClick={togglePlay}
                 className="absolute inset-0 flex items-center justify-center overflow-hidden cursor-pointer"
               >
-                {/* Photo Thumbnail from Workshop - Exact photo */}
+                {/* Photo Thumbnail from Workshop */}
                 <img 
-                  src={thumbnailPath} 
+                  src={photoUrl} 
                   alt="Wales Workshop Co-design Session" 
+                  onError={handleImageError}
                   className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-105"
                   referrerPolicy="no-referrer"
                 />
 
+                {/* Dark overlay gradient for contrast */}
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+
                 {/* Center Play Button Overlay with Logo Teal (#29B6BD) */}
                 <div className="absolute inset-0 m-auto w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-[#29B6BD] hover:bg-[#22979d] text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-all duration-300 border-2 border-white z-20">
                   <Play className="w-8 h-8 fill-current ml-1" />
+                </div>
+
+                {/* Badge on bottom left */}
+                <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1 rounded-lg text-[11px] text-white font-medium flex items-center gap-1.5 z-10 border border-white/20">
+                  <Video className="w-3.5 h-3.5 text-[#29B6BD]" />
+                  <span>Wales Place-Based Workshop Wrap-up Film</span>
                 </div>
               </div>
             ) : (
               /* REAL HTML5 VIDEO PLAYER WITH CONTROLS */
               <div className="absolute inset-0 bg-black flex items-center justify-center">
                 <video 
-                  src={videoPath}
-                  poster={thumbnailPath}
                   controls
                   autoPlay
+                  poster={photoUrl}
                   className="w-full h-full object-contain"
                   onError={(e) => {
-                    // Fallback to sample preview if local video file is empty placeholder
                     const target = e.currentTarget;
-                    const sampleUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
-                    if (target.src !== sampleUrl) {
-                      target.src = sampleUrl;
+                    if (target.src !== sampleDemoVideo) {
+                      setVideoError(true);
+                      target.src = sampleDemoVideo;
+                      target.play().catch(() => {});
                     }
                   }}
                 >
+                  <source src={exactVideoPath} type="video/mp4" />
+                  <source src={fallbackVideoPath} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
               </div>
             )}
           </div>
+
+          {/* Optional notice if video file is 0 bytes */}
+          {videoError && (
+            <p className="mt-2 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 leading-tight">
+              ⚠️ Note: The uploaded local video file (<code className="font-mono">public/OAHA_WALES...mp4</code>) is 0 bytes (empty placeholder). Playing sample video preview instead. Replace the file in <code className="font-mono">public/</code> with your full video.
+            </p>
+          )}
         </div>
 
         {/* RIGHT SIDE: Single Unified Box containing Quote, What Has Been Done, & So-Motive Credits */}
@@ -122,3 +159,4 @@ export const PlaceShowcaseVideo: React.FC = () => {
     </div>
   );
 };
+
