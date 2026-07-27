@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 const exactPhoto = '/wales_workshop_exact_photo_1785063346660.jpg';
-const thumbnailPhoto = '/wales_workshop_thumbnail_1785063122767.jpg';
+const thumbnailPhoto = '/wales_workshop_exact_photo_1785063346660.jpg';
 const aliasPhoto = '/wales_workshop_preview.jpg';
 
 export const PlaceShowcaseVideo: React.FC = () => {
