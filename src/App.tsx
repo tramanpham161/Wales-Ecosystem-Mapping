@@ -389,7 +389,7 @@ export default function App() {
   const [loadingEvidence, setLoadingEvidence] = useState(true);
 
   // Stage Selector State (shared or used in journey view)
-  const [activeTab, setActiveTab] = useState<FrictionPoint>('Visibility');
+  const [activeTab, setActiveTab] = useState<FrictionPoint | 'All'>('Visibility');
 
   // Filters for directory
   const [sectorFilter, setSectorFilter] = useState<string>('All');
@@ -639,7 +639,7 @@ export default function App() {
   // 2. Filter the organizations dynamically for directory
   const filteredOrganizations = useMemo(() => {
     return organizations.filter((org) => {
-      if (org.assignedTab !== activeTab) return false;
+      if (activeTab !== 'All' && org.assignedTab !== activeTab) return false;
       if (sectorFilter !== 'All' && org.sector !== sectorFilter) return false;
       if (lookingForFilter !== 'All' && org.lookingFor !== lookingForFilter) return false;
       if (selectedRegionFilter !== 'All') {
@@ -731,7 +731,7 @@ export default function App() {
     'Progression': '#9E2A2B'       // Crimson / Warm Red
   };
 
-  const activeColorHex = tabColorHex[activeTab] || '#29B6BD';
+  const activeColorHex = (activeTab !== 'All' && tabColorHex[activeTab]) ? tabColorHex[activeTab] : '#29B6BD';
 
   // Stats Counters
   const stats = useMemo(() => {
@@ -1055,7 +1055,7 @@ export default function App() {
       lookingForDetail: `Actively seeking ecosystem support on: ${formData.lookingFor}.`,
       latitude: jitterLat,
       longitude: jitterLng,
-      assignedTab: activeTab,
+      assignedTab: activeTab === 'All' ? 'Visibility' : activeTab,
       sector: formData.sector,
       lookingFor: formData.lookingFor,
       capacityStatus: formData.capacityStatus,
@@ -1115,9 +1115,9 @@ export default function App() {
     try {
       const added = await addGapOffer({
         ...gapForm,
-        region: gapForm.region || undefined,
-        category: gapForm.category || undefined,
-        urgency: gapForm.urgency || undefined,
+        region: (gapForm.region || undefined) as any,
+        category: (gapForm.category || undefined) as any,
+        urgency: (gapForm.urgency || undefined) as any,
         workingWithOaha: gapForm.workingWithOaha
       });
       setGapsOffers(prev => [added, ...prev]);
@@ -1162,7 +1162,7 @@ export default function App() {
     try {
       const added = await addCommitment({
         ...commitForm,
-        region: commitForm.region || undefined
+        region: (commitForm.region || undefined) as any
       });
       setCommitments(prev => [added, ...prev]);
       setCommitSuccess('Successfully registered partner commitment!');
@@ -1204,7 +1204,7 @@ export default function App() {
     try {
       const added = await addEvidenceLearning({
         ...evidenceForm,
-        region: evidenceForm.region || undefined
+        region: (evidenceForm.region || undefined) as any
       });
       setEvidenceLearning(prev => [added, ...prev]);
       setEvidenceSuccess('Successfully logged evidence & outcomes!');
@@ -1686,7 +1686,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
               organizations={organizations}
               selectedRegionFilter={selectedRegionFilter}
               onRegionFilterChange={setSelectedRegionFilter}
-              activeStage={activeTab === 'All' ? 'All Stages' : activeTabInfo.title}
+              activeStage={activeTab === 'All' ? 'All Stages' : activeTabInfo.label}
               onResetStageFilter={() => setActiveTab('All')}
               gapTypeFilter={gapTypeFilter}
               onGapTypeFilterChange={setGapTypeFilter}
@@ -1708,7 +1708,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     </h3>
                   </div>
                   <h4 className="text-base font-bold text-[#1a2521] leading-snug">
-                    {activeTab === 'All' ? 'All Pathway Stages across Wales' : activeTabInfo.title}
+                    {activeTab === 'All' ? 'All Pathway Stages across Wales' : activeTabInfo.label}
                   </h4>
                   <p className="text-[11px] text-[#51615a] leading-relaxed">
                     {activeTab === 'All' 
@@ -1721,7 +1721,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 max-w-2xl">
                   <div className="bg-[#f8f9f8] border border-[#e1e1db] rounded-xl p-3.5 text-center">
                     <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider">Mapped Programs</p>
-                    <p className="text-xl font-extrabold text-[#29B6BD] mt-1">{stats.tabCounts[activeTab] || (activeTab === 'All' ? stats.totalOrgs : 0)}</p>
+                    <p className="text-xl font-extrabold text-[#29B6BD] mt-1">{(activeTab !== 'All' ? stats.tabCounts[activeTab] : stats.totalCount) || 0}</p>
                   </div>
 
                   <div className="bg-[#f8f9f8] border border-[#e1e1db] rounded-xl p-3.5 text-center">
@@ -1820,7 +1820,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     <div className="bg-white border border-[#e1e1db] rounded-2xl p-8 text-center space-y-3">
                       <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
                       <p className="text-xs text-[#51615a] font-medium">
-                        No logged gaps, offers, or requests match the current stage ({activeTab === 'All' ? 'All Stages' : activeTabInfo.title}) and selected filters.
+                        No logged gaps, offers, or requests match the current stage ({activeTab === 'All' ? 'All Stages' : activeTabInfo.label}) and selected filters.
                       </p>
                       <button
                         onClick={() => {
