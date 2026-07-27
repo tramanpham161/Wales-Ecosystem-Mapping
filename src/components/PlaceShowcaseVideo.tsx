@@ -11,25 +11,14 @@ import {
 export const PlaceShowcaseVideo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   
-  // Image fallbacks
-  const primaryPhoto = '/wales_workshop_exact_photo_1785063346660.jpg';
-
-  
-  const [photoUrl, setPhotoUrl] = useState(primaryPhoto);
+  // Exact preview photo from public folder
+  const previewPhoto = '/wales_workshop_exact_photo_1785063346660.jpg';
   const [videoError, setVideoError] = useState(false);
 
-  // Exact file path as named by user in public folder
+  // Exact video file paths
   const exactVideoPath = encodeURI('/OAHA_WALES PLACE BASED WORKSHOP 2026_MAIN WRAP-UP FILM_V1.3-2.mp4');
   const fallbackVideoPath = '/wales_workshop_video.mp4';
   const sampleDemoVideo = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
-
-  const handleImageError = () => {
-    if (photoUrl === primaryPhoto) {
-      setPhotoUrl(secondaryPhoto);
-    } else if (photoUrl === secondaryPhoto) {
-      setPhotoUrl(tertiaryPhoto);
-    }
-  };
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
@@ -54,9 +43,8 @@ export const PlaceShowcaseVideo: React.FC = () => {
               >
                 {/* Photo Thumbnail from Workshop */}
                 <img 
-                  src={photoUrl} 
+                  src={previewPhoto} 
                   alt="Wales Workshop Co-design Session" 
-                  onError={handleImageError}
                   className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-105"
                   referrerPolicy="no-referrer"
                 />
@@ -81,7 +69,7 @@ export const PlaceShowcaseVideo: React.FC = () => {
                 <video 
                   controls
                   autoPlay
-                  poster={photoUrl}
+                  poster={previewPhoto}
                   className="w-full h-full object-contain"
                   onError={(e) => {
                     const target = e.currentTarget;
