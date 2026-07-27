@@ -152,7 +152,7 @@ export function StageProfessionalSvg({ className = "w-20 h-40 text-slate-900" }:
 }
 
 interface LearnerJourneyFlowProps {
-  activeTab: FrictionPoint;
+  activeTab: FrictionPoint | 'All';
   onTabSelect: (tabId: FrictionPoint) => void;
   tabColorHex: { [key in FrictionPoint]: string };
 }
@@ -207,7 +207,7 @@ export default function LearnerJourneyFlow({
     }
   ];
 
-  const activeIndex = journeyStages.findIndex(s => s.id === activeTab);
+  const activeIndex = activeTab === 'All' ? 0 : journeyStages.findIndex(s => s.id === activeTab);
 
   return (
     <div className="w-full bg-white border border-[#e1e1db] rounded-2xl p-6 shadow-xs relative overflow-hidden mb-6">
@@ -219,7 +219,7 @@ export default function LearnerJourneyFlow({
         className="absolute top-[38%] left-12 h-[2px] bg-[#29B6BD] transition-all duration-500 ease-out -z-0 hidden lg:block"
         style={{ 
           width: `${(activeIndex / 5) * (100 - (24 * 100 / 1152))}%`, // Adjust relative to endpoints
-          backgroundColor: tabColorHex[activeTab]
+          backgroundColor: activeTab === 'All' ? '#29B6BD' : tabColorHex[activeTab]
         }}
       />
 
