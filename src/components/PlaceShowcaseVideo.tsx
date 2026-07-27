@@ -8,17 +8,26 @@ import {
   Video
 } from 'lucide-react';
 
+import exactPhoto from '../assets/images/wales_workshop_exact_photo_1785063346660.jpg';
+import thumbnailPhoto from '../assets/images/wales_workshop_thumbnail_1785063122767.jpg';
+
 export const PlaceShowcaseVideo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  
-  // Exact preview photo from public folder
-  const previewPhoto = '/wales_workshop_exact_photo_1785063346660.jpg';
+  const [currentPhoto, setCurrentPhoto] = useState(exactPhoto);
   const [videoError, setVideoError] = useState(false);
 
   // Exact video file paths
   const exactVideoPath = encodeURI('/OAHA_WALES PLACE BASED WORKSHOP 2026_MAIN WRAP-UP FILM_V1.3-2.mp4');
   const fallbackVideoPath = '/wales_workshop_video.mp4';
   const sampleDemoVideo = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+
+  const handleImageError = () => {
+    if (currentPhoto === exactPhoto) {
+      setCurrentPhoto(thumbnailPhoto);
+    } else if (currentPhoto === thumbnailPhoto) {
+      setCurrentPhoto('/OD-1.jpg');
+    }
+  };
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
@@ -43,8 +52,9 @@ export const PlaceShowcaseVideo: React.FC = () => {
               >
                 {/* Photo Thumbnail from Workshop */}
                 <img 
-                  src={previewPhoto} 
+                  src={currentPhoto} 
                   alt="Wales Workshop Co-design Session" 
+                  onError={handleImageError}
                   className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-105"
                   referrerPolicy="no-referrer"
                 />
@@ -69,7 +79,7 @@ export const PlaceShowcaseVideo: React.FC = () => {
                 <video 
                   controls
                   autoPlay
-                  poster={previewPhoto}
+                  poster={currentPhoto}
                   className="w-full h-full object-contain"
                   onError={(e) => {
                     const target = e.currentTarget;
