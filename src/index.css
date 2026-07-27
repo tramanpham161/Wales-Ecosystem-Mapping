@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --color-sand-base: #ffffff;
+  --color-sand-card: #fbfbf9;
+  --color-charcoal-deep: #1a2521;
+  --color-charcoal-light: #51615a;
+  --color-sand-border: #e1e1db;
+  
+  /* Wales Logo Primary Palette */
+  --color-brand-teal: #29B6BD;
+  --color-brand-teal-dark: #1d8e93;
+  --color-brand-green: #3EB049;
+  --color-brand-green-dark: #2d8c36;
+  --color-brand-orange: #F89E1B;
+  --color-brand-orange-dark: #d6820d;
+  --color-brand-slate: #888E8F;
+  --color-brand-navy: #194a52;
+}
+
+/* Custom Leaflet style integration for cohesive Sand & Slate light UI */
+.leaflet-container {
+  background: #fbfbf9 !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #fbfbf9 !important;
+  color: #1a2521 !important;
+  border-radius: 0.75rem !important;
+  border: 1px solid #e1e1db !important;
+  box-shadow: 0 4px 12px rgba(26, 37, 33, 0.08) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.leaflet-popup-tip {
+  background: #fbfbf9 !important;
+  border: 1px solid #e1e1db !important;
+}
+
+.leaflet-popup-close-button {
+  color: #51615a !important;
+  padding: 8px 8px 0 0 !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #1a2521 !important;
+}
+
+.leaflet-tooltip.custom-leaflet-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.leaflet-tooltip-top.custom-leaflet-tooltip::before,
+.leaflet-tooltip-bottom.custom-leaflet-tooltip::before,
+.leaflet-tooltip-left.custom-leaflet-tooltip::before,
+.leaflet-tooltip-right.custom-leaflet-tooltip::before {
+  display: none !important;
+}
+
+/* Custom scrollbar for directory cards list */
+.custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #fbfbf9;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e1e1db;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #51615a;
+}

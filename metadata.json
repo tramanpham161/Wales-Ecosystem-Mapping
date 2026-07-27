@@ -1,0 +1,6 @@
+{
+  "name": "Wales Employment Ecosystem Mapping",
+  "description": "An interactive place-based ecosystem map and directory tracking youth employment initiatives in Wales.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
