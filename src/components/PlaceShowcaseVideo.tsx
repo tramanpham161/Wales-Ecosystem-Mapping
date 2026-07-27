@@ -7,8 +7,8 @@ import {
   Sparkles,
   Heart
 } from 'lucide-react';
-import thumbnailPath from '../assets/images/wales_workshop_exact_photo_1785063346660.jpg';
-import videoPath from '../assets/OAHA_WALES PLACE BASED WORKSHOP 2026_MAIN WRAP-UP FILM_V1.3-2.mp4';
+const thumbnailPath = '/wales_workshop_exact_photo_1785063346660.jpg';
+const videoPath = '/wales_workshop_video.mp4';
 
 export const PlaceShowcaseVideo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
