@@ -10,6 +10,7 @@ import {
 
 const exactPhoto = '/wales_workshop_exact_photo_1785063346660.jpg';
 const thumbnailPhoto = '/wales_workshop_thumbnail_1785063122767.jpg';
+const aliasPhoto = '/wales_workshop_preview.jpg';
 
 export const PlaceShowcaseVideo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -23,9 +24,9 @@ export const PlaceShowcaseVideo: React.FC = () => {
 
   const handleImageError = () => {
     if (currentPhoto === exactPhoto) {
+      setCurrentPhoto(aliasPhoto);
+    } else if (currentPhoto === aliasPhoto) {
       setCurrentPhoto(thumbnailPhoto);
-    } else if (currentPhoto === thumbnailPhoto) {
-      setCurrentPhoto('/OD-1.jpg');
     }
   };
 
