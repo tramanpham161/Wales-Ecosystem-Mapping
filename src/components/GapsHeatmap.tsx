@@ -296,7 +296,7 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
       plotAllMarkers(L);
 
       // Fetch official Wales Local Authorities GeoJSON
-      fetch('/wales_local_authorities.json')
+      fetch(import.meta.env.BASE_URL + 'wales_local_authorities.json')
         .then(res => res.json())
         .then(geoData => {
           if (!heatMapRef.current || !heatMapRef.current._container) return;
