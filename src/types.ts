@@ -1,10 +1,10 @@
 export type FrictionPoint =
-  | 'Visibility'
-  | 'Family Awareness'
-  | 'Transitions'
-  | 'Navigation'
-  | 'Translation'
-  | 'Progression';
+  | 'Home and Community'
+  | 'School'
+  | 'Post-16 Education and Training'
+  | 'Entry to Work'
+  | 'In Work'
+  | 'Re-entry';
 
 export type SectorType = 'Tech/Digital' | 'Green Economy' | 'Creative' | 'Foundational';
 
