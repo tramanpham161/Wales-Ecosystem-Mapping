@@ -289,13 +289,13 @@ export function generateCombinationsOfGapsOffers(): GapOfferRequest[] {
           }
           
           const categoryToFrictionPoint: Record<string, FrictionPoint[]> = {
-            resource: ['Visibility', 'Translation'],
-            job: ['Progression', 'Transitions'],
-            funding: ['Transitions', 'Navigation'],
-            others: ['Family Awareness', 'Navigation']
+            resource: ['Home and Community', 'In Work'],
+            job: ['Re-entry', 'Post-16 Education and Training'],
+            funding: ['Post-16 Education and Training', 'Entry to Work'],
+            others: ['School', 'Entry to Work']
           };
           
-          const assignedTabList = categoryToFrictionPoint[category] || ['Visibility', 'Navigation'];
+          const assignedTabList = categoryToFrictionPoint[category] || ['Home and Community', 'Entry to Work'];
           const assignedTab = assignedTabList[urgency === 'urgent' ? 0 : 1];
           
           list.push({
@@ -640,10 +640,11 @@ export default function App() {
   const filteredOrganizations = useMemo(() => {
     return organizations.filter((org) => {
       if (activeTab !== 'All') {
-        const matchesTab = (org.assignedTab || '') === activeTab;
-        const matchesJourneyStages = org.journeyStages && Array.isArray(org.journeyStages) && org.journeyStages.includes(activeTab as FrictionPoint);
-        if (!matchesTab && !matchesJourneyStages) {
-            console.log("Filtering org:", org.name, "assignedTab:", `"${org.assignedTab}"`, "activeTab:", `"${activeTab}"`, "matchesTab:", matchesTab, "matchesJourneyStages:", matchesJourneyStages);
+        const stages = (org.journeyStages && org.journeyStages.length > 0)
+          ? org.journeyStages
+          : (org.assignedTab ? [org.assignedTab] : []);
+        const matchesTab = stages.includes(activeTab as any) || org.assignedTab === activeTab;
+        if (!matchesTab) {
             return false;
         }
       }
@@ -659,8 +660,8 @@ export default function App() {
         const matchesName = org.name.toLowerCase().includes(query);
         const matchesLocation = org.location.toLowerCase().includes(query);
         const matchesProject = org.currentProject.toLowerCase().includes(query);
-        const matchesDesc = org.description.toLowerCase().includes(query);
-        const matchesSolutions = org.solutions.some(s => s.toLowerCase().includes(query));
+        const matchesDesc = (org.description || '').toLowerCase().includes(query);
+        const matchesSolutions = (org.solutions || []).some(s => s.toLowerCase().includes(query));
         return matchesName || matchesLocation || matchesProject || matchesDesc || matchesSolutions;
       }
       return true;
@@ -673,8 +674,7 @@ export default function App() {
       // Stage / Pathway Stage Filter
       if (activeTab && activeTab !== 'All') {
         const matchesTab = (g.assignedTab || '') === activeTab;
-        const matchesJourneyStages = g.journeyStages && Array.isArray(g.journeyStages) && g.journeyStages.includes(activeTab as FrictionPoint);
-        if (g.assignedTab && !matchesTab && !matchesJourneyStages) return false;
+        if (g.assignedTab && !matchesTab) return false;
       }
 
       if (gapTypeFilter !== 'All' && g.type !== gapTypeFilter) return false;
@@ -732,12 +732,12 @@ export default function App() {
 
   // Tab Colors mapping
   const tabColorHex: { [key in FrictionPoint]: string } = {
-    'Home and Community': '#2BB7BA',       // Brand Teal
-    'Family Awareness': '#3AB03A',  // Organic Green
-    'Transitions': '#FF9900',      // Vibrant Orange
-    'Navigation': '#2BB7BA',       // Teal
-    'Translation': '#986430',      // Bronze
-    'Progression': '#9E2A2B'       // Crimson / Warm Red
+    'Home and Community': '#2BB7BA',
+    'School': '#3AB03A',
+    'Post-16 Education and Training': '#FF9900',
+    'Entry to Work': '#2BB7BA',
+    'In Work': '#986430',
+    'Re-entry': '#9E2A2B'
   };
 
   const activeColorHex = (activeTab !== 'All' && tabColorHex[activeTab]) ? tabColorHex[activeTab] : '#29B6BD';
@@ -2103,6 +2103,20 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
               <div>
                 <h3 className="text-xs font-bold text-[#51615a] uppercase tracking-wide">Filter Directory by Stage</h3>
                 <div className="flex flex-wrap gap-1.5 mt-2">
+                  <button
+                    key="All"
+                    onClick={() => {
+                      setActiveTab('All');
+                      setSelectedOrgId(null);
+                    }}
+                    className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition cursor-pointer ${
+                      activeTab === 'All'
+                        ? 'bg-[#29B6BD] text-white border-[#29B6BD]'
+                        : 'bg-white hover:bg-gray-50 text-[#51615a] border-[#e1e1db]'
+                    }`}
+                  >
+                    All Stages
+                  </button>
                   {SYSTEMIC_TABS.map((tab) => (
                     <button
                       key={tab.id}
