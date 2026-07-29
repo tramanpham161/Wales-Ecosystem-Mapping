@@ -1392,47 +1392,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
             </div>
           </div>
 
-          {/* Utility Action Bar */}
-          <div className="flex items-center gap-3 self-end md:self-auto">
-            {/* Database Control Buttons */}
-            <div className="flex items-center gap-2 bg-gray-50 border border-[#e1e1db] rounded-xl px-3 py-1.5 shadow-xs text-xs">
-              <span className="text-[10px] font-medium text-[#51615a]">Database Status</span>
-              <span className="text-[#e1e1db] text-xs">|</span>
-              <button 
-                onClick={refreshAllData}
-                disabled={checkingDb}
-                title="Refresh database connection status"
-                className="text-[#51615a] hover:text-[#29B6BD] p-0.5 rounded transition cursor-pointer flex items-center gap-1"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${checkingDb ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
 
-            {/* Profile Action Trigger */}
-            {currentUser ? (
-              <button
-                onClick={() => setIsProfileViewOpen(true)}
-                className="px-3.5 py-1.5 bg-teal-50 border border-teal-200 text-teal-900 rounded-xl flex items-center gap-2 hover:bg-teal-100/80 transition cursor-pointer text-xs font-semibold shadow-3xs"
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-[#3EB049] animate-pulse"></div>
-                {currentUser.type === 'organisation' && <Building2 className="w-3.5 h-3.5 text-teal-700" />}
-                {currentUser.type === 'business' && <Briefcase className="w-3.5 h-3.5 text-teal-700" />}
-                {currentUser.type === 'individual' && <User className="w-3.5 h-3.5 text-[#3EB049]" />}
-                <span>{currentUser.name}</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  setAuthAlertMessage('');
-                  setIsLoginModalOpen(true);
-                }}
-                className="px-3.5 py-1.5 bg-[#29B6BD] hover:bg-[#1d8e93] text-white rounded-xl flex items-center gap-1.5 transition cursor-pointer text-xs font-bold shadow-3xs"
-              >
-                <User className="w-3.5 h-3.5 text-white" />
-                <span>Log In / Profile</span>
-              </button>
-            )}
-          </div>
         </div>
       </header>
 
