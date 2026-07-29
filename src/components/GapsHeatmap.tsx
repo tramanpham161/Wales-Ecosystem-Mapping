@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { GapOfferRequest, FrictionPoint } from '../types';
 import { SYSTEMIC_TABS } from '../data';
-import { WALES_LOCAL_AUTHORITIES_DATA, LocalAuthorityData } from '../walesLocalAuthoritiesData.ts';
+import { WALES_LOCAL_AUTHORITIES_DATA, LocalAuthorityData } from '../walesLocalAuthoritiesData';
 import { 
   Info, 
   MapPin, 
