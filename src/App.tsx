@@ -1056,6 +1056,7 @@ export default function App() {
     const newOrg: Organization = {
       id: `custom-org-${Date.now()}`,
       name: name.trim(),
+      journeyStages: ['Foundations / Early Years'],
       location: finalLocation,
       address: `${finalLocation}, Wales`,
       keyContact: 'Lead Coordinator',
