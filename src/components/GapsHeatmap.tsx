@@ -302,8 +302,9 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
           if (!heatMapRef.current || !heatMapRef.current._container) return;
 
           const getFeatureStyle = (feature: any) => {
-            const name = feature.properties?.LAD13NM || feature.properties?.LAD21NM || feature.properties?.LAD22NM || feature.properties?.name || '';
+            const name = (feature.properties?.LAD13NM || feature.properties?.LAD21NM || feature.properties?.LAD22NM || feature.properties?.name || '').trim();
             const data = WALES_LOCAL_AUTHORITIES_DATA[name];
+            console.log('Feature name:', name, 'Data:', data);
             const isSelected = selectedLAName === name;
 
             let fillColor = '#94a3b8';
