@@ -111,7 +111,7 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
   const [mapMetric, setMapMetric] = useState<MapMetric>('gap');
 
   // Tab 2 (3-Criteria Heatmap) State
-  const [selectedActivityId, setSelectedActivityId] = useState<FrictionPoint>('Visibility');
+  const [selectedActivityId, setSelectedActivityId] = useState<FrictionPoint>('Home and Community');
 
   // Real Leaflet Map Hooks for geographical Wales heat overlay
   const heatMapRef = useRef<any>(null);
@@ -542,68 +542,68 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
 
   const activities = useMemo<ActivityItem[]>(() => [
     {
-      id: 'Visibility',
-      label: 'Stage 1: Visibility',
+      id: 'Home and Community',
+      label: 'Stage 1: Home and Community',
       subLabel: 'Reaching Families Directly',
       impact: 85,          // High Impact
       probability: 78,     // High Probability of Barrier
-      description: 'Learners and isolated families do not know digital help exists. Reaching them requires physical, hyper-local marketing.',
+      description: 'Support, awareness, and opportunities rooted in family life, trusted community spaces, and early environment.',
       metrics: '78% awareness deficit recorded in rural areas',
       strategicZone: 'Critical Deficit',
       color: '#DE6B6B' // Soft Red
     },
     {
-      id: 'Family Awareness',
-      label: 'Stage 2: Family Awareness',
-      subLabel: 'Combating Stigma & Myths',
+      id: 'School',
+      label: 'Stage 2: School',
+      subLabel: 'Primary & Secondary Education',
       impact: 70,          // Medium-High Impact
       probability: 58,     // Medium Probability
-      description: 'Stigma around lack of literacy or technology. Parents fear being judged or exposed.',
+      description: 'Foundation learning, curriculum alignment, inspiring career awareness, and supported school transitions.',
       metrics: '58% of parents cite privacy/stigma as primary barrier',
       strategicZone: 'Strategic Balance',
       color: '#E5A973' // Soft Orange
     },
     {
-      id: 'Transitions',
-      label: 'Stage 3: Transitions',
-      subLabel: 'Primary to Secondary Handover',
+      id: 'Post-16 Education and Training',
+      label: 'Stage 3: Post-16 Ed. & Training',
+      subLabel: 'Colleges & Apprenticeships',
       impact: 35,          // Low-Medium Impact
       probability: 88,     // Very High Probability
-      description: 'Massive resource drops and digital accounts lost during primary to secondary high school transitions.',
+      description: 'Further education colleges, apprenticeships, vocational training, and higher education pathways.',
       metrics: '88% of learners experience device disruption during summer',
       strategicZone: 'Saturated',
       color: '#E6C687' // Soft Yellow
     },
     {
-      id: 'Navigation',
-      label: 'Stage 4: Navigation',
-      subLabel: 'Bespoke Support Guidance',
+      id: 'Entry to Work',
+      label: 'Stage 4: Entry to Work',
+      subLabel: 'First Jobs & Career Entry',
       impact: 62,          // Medium Impact
       probability: 40,     // Medium-Low Probability
-      description: 'Providing a human guide or digital assistant to hold hands through onboarding processes.',
+      description: 'Bridging education to early employment, inclusive recruitment, internships, and first-job navigation.',
       metrics: '1:1 human assistance improves success rates by 3.5x',
       strategicZone: 'Strategic Balance',
       color: '#63B38F' // Soft Green
     },
     {
-      id: 'Translation',
-      label: 'Stage 5: Translation',
-      subLabel: 'Welsh Language Alignment',
+      id: 'In Work',
+      label: 'Stage 5: In Work',
+      subLabel: 'Retention & Career Growth',
       impact: 90,          // Critical Impact
       probability: 25,     // Low Probability (because resources exist, but misplaced)
-      description: 'Providing fully bilingual digital frameworks so learners do not suffer secondary cognitive load.',
+      description: 'Workplace culture, ongoing skill development, fair retention, and structured internal career progression.',
       metrics: 'Welsh language compliance required for all public schemes',
       strategicZone: 'Muted/Stable',
       color: '#5FAAB3' // Soft Teal
     },
     {
-      id: 'Progression',
-      label: 'Stage 6: Progression',
-      subLabel: 'Pathways to Higher Skills',
+      id: 'Re-entry',
+      label: 'Stage 6: Re-entry',
+      subLabel: 'Upskilling & Returning to Work',
       impact: 48,          // Medium-Low Impact
       probability: 65,     // Medium-High Probability
-      description: 'Bridging initial digital inclusion with sustainable tertiary paths, college access, or local jobs.',
-      metrics: 'Progression index indicates 40% jump to advanced courses',
+      description: 'Navigating career transitions, returning to work after time away, adult upskilling, and lifelong learning.',
+      metrics: 'Re-entry index indicates 40% jump to advanced courses',
       strategicZone: 'Strategic Balance',
       color: '#E6C687' // Soft Yellow
     }
@@ -1183,7 +1183,7 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
                             }`}>
                               <div className="flex items-center justify-between w-full gap-2">
                                 <span className="text-[8px] font-extrabold text-white/60 uppercase tracking-widest leading-none">
-                                  {act.id === 'Family Awareness' ? 'Awareness' : act.id}
+                                  {act.id === 'Home and Community' ? 'Community' : act.id}
                                 </span>
                                 <span 
                                   className="w-3.5 h-3.5 rounded-full bg-white/20 hover:bg-white text-white hover:text-black font-serif italic text-[9px] font-bold flex items-center justify-center transition cursor-help shrink-0"
