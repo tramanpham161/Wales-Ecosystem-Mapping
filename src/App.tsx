@@ -389,7 +389,7 @@ export default function App() {
   const [loadingEvidence, setLoadingEvidence] = useState(true);
 
   // Stage Selector State (shared or used in journey view)
-  const [activeTab, setActiveTab] = useState<FrictionPoint | 'All'>('Visibility');
+  const [activeTab, setActiveTab] = useState<FrictionPoint | 'All'>('All');
 
   // Filters for directory
   const [sectorFilter, setSectorFilter] = useState<string>('All');
@@ -429,7 +429,7 @@ export default function App() {
     organization: '',
     contactEmail: '',
     content: '',
-    assignedTab: 'Visibility' as FrictionPoint,
+    assignedTab: 'Home and Community' as FrictionPoint,
     region: '' as string,
     category: '' as string,
     urgency: '' as string,
@@ -452,7 +452,7 @@ export default function App() {
     progress: 'Drafting' as 'Drafting' | 'Active Pilot' | 'Completed',
     nextSteps: '',
     dependencies: '',
-    assignedTab: 'Visibility' as FrictionPoint,
+    assignedTab: 'Home and Community' as FrictionPoint,
     region: '' as string
   });
 
@@ -463,7 +463,7 @@ export default function App() {
   const [evidenceForm, setEvidenceForm] = useState({
     title: '',
     logType: 'Community Feedback' as 'Community Feedback' | 'Outcome Metric' | 'Barrier Encountered' | 'Key Decision' | 'Delivery Learning',
-    assignedTab: 'Visibility' as FrictionPoint,
+    assignedTab: 'Home and Community' as FrictionPoint,
     description: '',
     whatChanged: '',
     region: '' as string
@@ -639,7 +639,14 @@ export default function App() {
   // 2. Filter the organizations dynamically for directory
   const filteredOrganizations = useMemo(() => {
     return organizations.filter((org) => {
-      if (activeTab !== 'All' && org.assignedTab !== activeTab) return false;
+      if (activeTab !== 'All') {
+        const matchesTab = (org.assignedTab || '') === activeTab;
+        const matchesJourneyStages = org.journeyStages && Array.isArray(org.journeyStages) && org.journeyStages.includes(activeTab as FrictionPoint);
+        if (!matchesTab && !matchesJourneyStages) {
+            console.log("Filtering org:", org.name, "assignedTab:", `"${org.assignedTab}"`, "activeTab:", `"${activeTab}"`, "matchesTab:", matchesTab, "matchesJourneyStages:", matchesJourneyStages);
+            return false;
+        }
+      }
       if (sectorFilter !== 'All' && org.sector !== sectorFilter) return false;
       if (lookingForFilter !== 'All' && org.lookingFor !== lookingForFilter) return false;
       if (selectedRegionFilter !== 'All') {
@@ -665,7 +672,9 @@ export default function App() {
     return gapsOffers.filter((g) => {
       // Stage / Pathway Stage Filter
       if (activeTab && activeTab !== 'All') {
-        if (g.assignedTab && g.assignedTab !== activeTab) return false;
+        const matchesTab = (g.assignedTab || '') === activeTab;
+        const matchesJourneyStages = g.journeyStages && Array.isArray(g.journeyStages) && g.journeyStages.includes(activeTab as FrictionPoint);
+        if (g.assignedTab && !matchesTab && !matchesJourneyStages) return false;
       }
 
       if (gapTypeFilter !== 'All' && g.type !== gapTypeFilter) return false;
@@ -723,7 +732,7 @@ export default function App() {
 
   // Tab Colors mapping
   const tabColorHex: { [key in FrictionPoint]: string } = {
-    'Visibility': '#2BB7BA',       // Brand Teal
+    'Home and Community': '#2BB7BA',       // Brand Teal
     'Family Awareness': '#3AB03A',  // Organic Green
     'Transitions': '#FF9900',      // Vibrant Orange
     'Navigation': '#2BB7BA',       // Teal
@@ -1055,7 +1064,7 @@ export default function App() {
       lookingForDetail: `Actively seeking ecosystem support on: ${formData.lookingFor}.`,
       latitude: jitterLat,
       longitude: jitterLng,
-      assignedTab: activeTab === 'All' ? 'Visibility' : activeTab,
+      assignedTab: activeTab === 'All' ? 'Home and Community' : activeTab,
       sector: formData.sector,
       lookingFor: formData.lookingFor,
       capacityStatus: formData.capacityStatus,
@@ -1129,7 +1138,7 @@ export default function App() {
         organization: '',
         contactEmail: '',
         content: '',
-        assignedTab: 'Visibility',
+        assignedTab: 'Home and Community',
         region: '',
         category: '',
         urgency: '',
@@ -1174,7 +1183,7 @@ export default function App() {
         progress: 'Drafting',
         nextSteps: '',
         dependencies: '',
-        assignedTab: 'Visibility',
+        assignedTab: 'Home and Community',
         region: ''
       });
       setTimeout(() => {
@@ -1211,7 +1220,7 @@ export default function App() {
       setEvidenceForm({
         title: '',
         logType: 'Community Feedback',
-        assignedTab: 'Visibility',
+        assignedTab: 'Home and Community',
         description: '',
         whatChanged: '',
         region: ''
@@ -1661,37 +1670,76 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 <div>
                   <h2 className="text-base font-bold text-[#1a2521] flex items-center gap-2">
                     <Globe className="w-5 h-5 text-[#29B6BD]" />
-                    <span>Life Stage Diagnostic & Heat Map</span>
+                    <span>Journey to Opportunity & Support Map</span>
                   </h2>
                   <p className="text-xs text-[#51615a] mt-1">
-                    Select any stage along the young person’s pathway to view corresponding friction points, active solutions, stage metrics, and localized gaps, offers & requests.
+                    Explore how a young person’s opportunities develop over time, and where organisations and services are supporting people at each point in the journey.
                   </p>
                 </div>
-                {activeTab !== 'All' && (
-                  <button
-                    onClick={() => setActiveTab('All')}
-                    className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#51615a] text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
-                  >
-                    <span>View All Stages</span>
-                  </button>
-                )}
               </div>
+
+              {/* HOW OPPORTUNITY TAKES SHAPE INTRO */}
+              <div className="bg-[#f9f9f7] p-4 rounded-xl text-xs text-[#51615a] space-y-3 border border-[#e1e1db]">
+                <h3 className="font-bold text-[#1a2521]">How opportunity takes shape</h3>
+                <p>A young person’s understanding of what they might do in the future begins long before they apply for a course, apprenticeship or job. It is shaped by their family and carers, school, friends, community, role models, local employers and the opportunities they can see around them.</p>
+                <p>These influences can expand what a young person believes is possible—or make some pathways difficult to see, understand or access. The journey is not always linear. People may pause, change direction, leave education or employment, encounter barriers or need support to reconnect with opportunity.</p>
+                <p>Select a stage below to explore the charities, community organisations, education providers, employers and services supporting people at that point in the journey.</p>
+              </div>
+
+              {/* JOURNEY STAGES HEADING */}
+              <h2 className="text-lg font-bold text-[#1a2521]">
+                Journey to Opportunity
+              </h2>
               
               <LearnerJourneyFlow
                 activeTab={activeTab}
                 onTabSelect={(tabId) => {
                   setActiveTab(tabId);
                   setSelectedOrgId(null);
+                  setSectorFilter('All');
+                  setLookingForFilter('All');
+                  setSearchQuery('');
+                  setGapTypeFilter('All');
                 }}
                 tabColorHex={tabColorHex}
               />
+
+              {/* NEW MAP HEADING & INTRO BLOCK */}
+              <div className="bg-white rounded-2xl border border-[#e1e1db] p-6 space-y-4 shadow-xs">
+                <h2 className="text-lg font-bold text-[#1a2521]">
+                  {activeTab !== 'All' 
+                    ? `Support and opportunity at this stage` 
+                    : `Support and opportunity across the journey`}
+                </h2>
+                <p className="text-xs text-[#51615a] leading-relaxed">
+                  {activeTab !== 'All'
+                    ? `Explore the organisations and services supporting people at ${activeTab}. Compare mapped provision with local deprivation and opportunity data to understand existing strengths, underserved communities and possible gaps in support.`
+                    : `Explore organisations and services across the whole journey. Compare mapped provision with local deprivation and opportunity data to identify strengths, weak connections and opportunities for collaboration or investment.`}
+                </p>
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-4">
+                  <span className="text-xs font-semibold text-[#51615a]">
+                    {activeTab !== 'All' 
+                      ? `Viewing: ${activeTab}` 
+                      : `Viewing: All stages`}
+                  </span>
+                  {activeTab !== 'All' && (
+                    <button
+                      onClick={() => setActiveTab('All')}
+                      className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#51615a] text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span>View the whole journey</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* MAP VISUALIZATION BLOCK WITH INTEGRATED DUAL PERSPECTIVE & MAP FILTERS */}
             <GapsHeatmap 
               gapsOffers={gapsOffers}
               filteredGapsOffers={filteredGapsOffers}
-              organizations={organizations}
+              organizations={filteredOrganizations}
               selectedRegionFilter={selectedRegionFilter}
               onRegionFilterChange={setSelectedRegionFilter}
               activeStage={activeTab === 'All' ? 'All Stages' : activeTabInfo.label}
@@ -1704,6 +1752,13 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
               onGapUrgencyFilterChange={setGapUrgencyFilter}
               onOpenAddGap={handleOpenAddGap}
             />
+
+            {/* DATA INTERPRETATION NOTE */}
+            <div className="bg-[#fbfbf9] p-4 rounded-xl border border-[#e1e1db] text-[10px] text-[#51615a] mt-6">
+              <p>
+                <strong>Data and interpretation note:</strong> This map reflects the organisations and provision identified through the ecosystem-mapping process. An absence of mapped provision does not necessarily mean that no support exists. The map will continue to develop as organisations contribute and validate information.
+              </p>
+            </div>
 
             {/* ACTIVE STAGE STATISTICS SUMMARY BANNER (Positioned directly below map) */}
             <div className="bg-white rounded-2xl border border-[#e1e1db] p-5 shadow-xs">
