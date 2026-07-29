@@ -164,45 +164,45 @@ export default function LearnerJourneyFlow({
 }: LearnerJourneyFlowProps) {
   const journeyStages = [
     {
-      id: 'Visibility' as FrictionPoint,
-      title: "Visibility",
-      description: "Early mapping & outreach",
-      fullDetails: "Pathways into training and employment exist across Wales, but are often invisible to young people early in life. This stage focuses on proactive street outreach, pop-up youth hubs, community mapping, and early awareness campaigns in underserved or former coalfield communities so 11-16 year olds learn about opportunities before falling out of the system.",
+      id: 'Home and Community' as FrictionPoint,
+      title: "Home & Community",
+      description: "Early influences and foundations",
+      fullDetails: "Family, carers, peers, community organisations, local role models and the opportunities visible within a place can shape a young person’s confidence, aspirations and understanding of what may be possible.",
       svg: (color: string) => <StageBabySvg className="w-16 h-24 sm:w-20 sm:h-28" />
     },
     {
-      id: 'Family Awareness' as FrictionPoint,
-      title: "Family Awareness",
-      description: "Engaging parents & carers",
-      fullDetails: "Parents, carers, and trusted community adults heavily shape young people's choices. However, emerging sectors (like green tech, digital, or modern apprenticeships) are often unfamiliar or misunderstood. This stage provides family-friendly guidance, bilingual storytelling, and direct parent workshops to dismantle myths and build confidence in non-traditional routes.",
+      id: 'School' as FrictionPoint,
+      title: "School",
+      description: "Awareness, guidance and experience",
+      fullDetails: "Support delivered during school that helps young people understand different pathways, build confidence and connect learning with the wider world of work.",
       svg: (color: string) => <StageToddlerSvg className="w-16 h-24 sm:w-20 sm:h-28" />
     },
     {
-      id: 'Transitions' as FrictionPoint,
-      title: "Transitions",
-      description: "Curriculum & job alignment",
-      fullDetails: "Critical transition points—such as primary to secondary school handovers, or moving from GCSEs to college or work—suffer high dropout rates. This stage aligns school curricula directly with real local employer needs, preventing account and device loss during school handovers, and guaranteeing structured work experience and employer-led mentoring.",
+      id: 'Post-16 Education and Training' as FrictionPoint,
+      title: "Post-16",
+      description: "Education, training and skills",
+      fullDetails: "Further education, sixth form, higher education, vocational training, apprenticeships and other routes that help young people develop qualifications, skills, experience and professional networks.",
       svg: (color: string) => <StageSchoolchildSvg className="w-16 h-24 sm:w-20 sm:h-28" />
     },
     {
-      id: 'Navigation' as FrictionPoint,
-      title: "Navigation",
-      description: "Guiding non-linear paths",
-      fullDetails: "Learners who take non-linear paths or face personal challenges often experience repeated retelling of their story, complex eligibility thresholds, and weak advocacy. This stage introduces 1-on-1 human navigators, personal advocates, and streamlined intake protocols that guide young people smoothly through complex multi-agency services without losing momentum.",
+      id: 'Entry to Work' as FrictionPoint,
+      title: "Entry to Work",
+      description: "Preparing for and accessing work",
+      fullDetails: "Support that helps people understand employment options, build job-readiness and secure work, an apprenticeship or another route into economic opportunity.",
       svg: (color: string) => <StageYoungAdultSvg className="w-16 h-24 sm:w-20 sm:h-28" />
     },
     {
-      id: 'Translation' as FrictionPoint,
-      title: "Translation",
-      description: "Matching demand to awareness",
-      fullDetails: "Real regional employer demand and job vacancies do not automatically translate into learner awareness or training course offerings. This stage bridges regional skill gaps by aligning employer job specifications with bilingual, practical training programs, ensuring that local workforce demand directly shapes vocational options.",
+      id: 'In Work' as FrictionPoint,
+      title: "In Work",
+      description: "Belonging, development and progression",
+      fullDetails: "The support, workplace culture and development opportunities that help people remain in work, build confidence and skills, and progress into more secure or rewarding roles.",
       svg: (color: string) => <StageAdultSvg className="w-16 h-24 sm:w-20 sm:h-28" />
     },
     {
-      id: 'Progression' as FrictionPoint,
-      title: "Progression",
-      description: "Tackling workplace culture",
-      fullDetails: "Gaining initial entry into a job or apprenticeship is not enough if workplace cultures reward narrow ideas of 'fit' or lack ongoing development. This stage focuses on inclusive workplace cultures, fair retention, peer mentorship, and structured career laddering so young people achieve sustainable, long-term career progression in Wales.",
+      id: 'Re-entry' as FrictionPoint,
+      title: "Re-entry",
+      description: "Reconnecting or changing direction",
+      fullDetails: "Support for people whose journey has been interrupted, who are outside education or employment, or who need help to return, retrain or find a different route forward.",
       svg: (color: string) => <StageProfessionalSvg className="w-16 h-24 sm:w-20 sm:h-28" />
     }
   ];
@@ -228,115 +228,108 @@ export default function LearnerJourneyFlow({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#e1e1db]/60 pb-4">
           <div>
             <span className="text-[10px] font-bold text-[#29B6BD] tracking-wider uppercase">
-              The Young Learner's Life Path
+              THE JOURNEY TO OPPORTUNITY
             </span>
             <h2 className="text-base font-extrabold text-[#1a2521] tracking-tight">
-              A Systemic Collaboration Journey Across Wales
+              Explore support across the journey
             </h2>
+            <p className="text-xs text-[#51615a] mt-1 italic">People may enter the journey at different points and move between stages as their ambitions and circumstances change.</p>
           </div>
           <div className="flex items-center gap-2 bg-[#fbfbf9] px-3 py-1 rounded-xl border border-[#e1e1db] text-xs">
-            <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: tabColorHex[activeTab] }}></span>
-            <span className="text-[#51615a]">Currently Selected: <strong className="text-[#1a2521] font-semibold">Stage {activeIndex + 1}/6</strong></span>
+            <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: activeTab === 'All' ? '#29B6BD' : tabColorHex[activeTab] }}></span>
+            <span className="text-[#51615a]">
+              {activeIndex >= 0 ? (
+                <>
+                  Viewing Stage {activeIndex + 1}: <strong className="text-[#1a2521] font-semibold">{journeyStages[activeIndex].title}</strong>
+                </>
+              ) : (
+                <>Viewing All Stages</>
+              )}
+            </span>
           </div>
         </div>
 
         {/* 6 Stage Column Layout */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-stretch mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 items-stretch mt-6">
           {journeyStages.map((stage, i) => {
             const isActive = activeTab === stage.id;
-            const isCompleted = i <= activeIndex;
             const stageColor = tabColorHex[stage.id];
             
             return (
               <button
                 key={stage.id}
                 onClick={() => onTabSelect(stage.id)}
+                aria-selected={isActive}
+                role="tab"
                 className={`group flex flex-col justify-start text-left rounded-xl p-4 transition-all duration-300 relative border cursor-pointer ${
                   isActive
-                    ? 'bg-white border-[#1a2521] shadow-[0_6px_16px_rgba(26,37,33,0.08)] scale-[1.02] z-10'
-                    : 'bg-[#fbfbf9]/40 border-[#e1e1db] hover:border-[#51615a]/40 hover:bg-[#fbfbf9]/80'
+                    ? 'border-[#1a2521] shadow-[0_6px_16px_rgba(26,37,33,0.08)] scale-[1.02] z-10'
+                    : 'border-[#e1e1db] hover:border-[#51615a]/40 bg-white'
                 }`}
                 style={{
                   borderTop: isActive ? `4px solid ${stageColor}` : '1px solid #e1e1db'
                 }}
               >
-                {/* Stage Index Badge & Top Right Small 'i' Info Icon */}
-                <div className="flex items-center justify-between mb-2 w-full">
-                  <span 
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                      isActive 
-                        ? 'text-white' 
-                        : isCompleted 
-                          ? 'bg-[#fbfbf9] text-[#51615a]'
-                          : 'text-[#969696]/80'
-                    }`}
-                    style={{
-                      backgroundColor: isActive ? stageColor : undefined,
-                      borderColor: isActive ? stageColor : '#e1e1db'
-                    }}
-                  >
+                {/* Title (Journey Label) - Most Prominent */}
+                <h4 className={`text-sm font-bold uppercase tracking-wider leading-snug mb-1 ${
+                  isActive ? 'text-[#1a2521]' : 'text-[#1a2521]'
+                }`}>
+                  {stage.title}
+                </h4>
+
+                {/* Short Description */}
+                <p className="text-[10px] text-[#51615a] leading-normal line-clamp-2 mb-2">
+                  {stage.description}
+                </p>
+
+                {/* Stage Number (Secondary Info) */}
+                <div className="flex items-center justify-between mt-auto pt-2 w-full">
+                  <span className="text-[10px] font-bold text-[#969696] uppercase tracking-widest">
                     Stage {i + 1}
                   </span>
                   
-                  <div className="flex items-center gap-1.5">
-                    {isCompleted && !isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stageColor }}></span>
-                    )}
-
-                    {/* Small letter 'i' top right badge */}
-                    <div 
-                      className="relative group/info z-30" 
-                      onClick={(e) => e.stopPropagation()}
+                  {/* Small 'i' Info Icon */}
+                  <div 
+                    className="relative group/info z-30" 
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span
+                      className="w-5 h-5 rounded-full bg-[#fbfbf9] border border-[#e1e1db] text-[#176e73] hover:bg-[#29B6BD] hover:text-white font-serif italic text-[10px] font-bold flex items-center justify-center transition-all cursor-help shadow-2xs"
+                      title="View stage explanation"
                     >
-                      <span
-                        className="w-4 h-4 rounded-full bg-white border border-[#e1e1db] text-[#176e73] hover:bg-[#29B6BD] hover:text-white hover:border-[#29B6BD] font-serif italic text-[10px] font-bold flex items-center justify-center transition-all cursor-help shadow-2xs"
-                        title="Hover for stage explanation"
-                      >
-                        i
-                      </span>
+                      i
+                    </span>
 
-                      {/* Tooltip on Hover Explaining Stage Details */}
-                      <div className={`absolute ${i >= 3 ? 'right-0' : 'left-0'} top-6 w-64 sm:w-72 p-3.5 bg-[#1a2521] text-white rounded-xl shadow-2xl border border-slate-700 opacity-0 pointer-events-none group-hover/info:opacity-100 group-hover/info:pointer-events-auto transition-all duration-200 z-50 text-left leading-relaxed`}>
-                        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: stageColor }} />
-                            <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">
-                              Stage {i + 1}: {stage.title}
-                            </span>
-                          </div>
-                          <span className="text-[9px] text-slate-400 font-mono">Stage Overview</span>
+                    {/* Tooltip on Hover Explaining Stage Details */}
+                    <div className={`absolute ${i >= 3 ? 'right-0' : 'left-0'} top-6 w-64 sm:w-72 p-3.5 bg-[#1a2521] text-white rounded-xl shadow-2xl border border-slate-700 opacity-0 pointer-events-none group-hover/info:opacity-100 group-hover/info:pointer-events-auto transition-all duration-200 z-50 text-left leading-relaxed`}>
+                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: stageColor }} />
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">
+                            Stage {i + 1}: {stage.title}
+                          </span>
                         </div>
-                        <p className="text-[11px] text-slate-200 leading-normal font-normal">
-                          {stage.fullDetails}
-                        </p>
                       </div>
+                      <p className="text-[11px] text-slate-200 leading-normal font-normal">
+                        {stage.fullDetails}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Stick Figure Graphic Container */}
                 <div 
-                  className={`w-full h-28 flex items-center justify-center rounded-lg border mb-3 transition-all duration-300 ${
+                  className={`w-full h-20 flex items-center justify-center rounded-lg border my-3 transition-all duration-300 ${
                     isActive 
-                      ? 'bg-white border-transparent' 
-                      : 'bg-[#faf9f6]/80 border-[#e1e1db]/40 group-hover:bg-[#faf9f6]'
+                      ? 'bg-[#fbfbf9] border-transparent' 
+                      : 'bg-[#faf9f6]/80 border-[#e1e1db]/40'
                   }`}
                   style={{
-                    color: isActive ? stageColor : isCompleted ? `${stageColor}b0` : '#969696'
+                    color: isActive ? stageColor : '#969696'
                   }}
                 >
                   {stage.svg(stageColor)}
                 </div>
-
-                {/* Stage Title and Subtitle */}
-                <h4 className={`text-xs font-bold uppercase tracking-wider leading-snug ${
-                  isActive ? 'text-[#1a2521]' : 'text-[#51615a] group-hover:text-[#1a2521]'
-                }`}>
-                  {stage.title}
-                </h4>
-                <p className="text-[10px] text-[#51615a] mt-1 leading-normal line-clamp-2">
-                  {stage.description}
-                </p>
 
                 {/* Active Underline indicator on small mobile screens */}
                 {isActive && (
