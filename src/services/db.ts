@@ -20,8 +20,8 @@ const INITIAL_GAPS_OFFERS: GapOfferRequest[] = [
     organization: 'Gwynedd Community Council',
     contactEmail: 'sion@gwynedd.llyw.cymru',
     content: 'Young people in isolated farming communities struggle to access career mapping sessions in Welsh. We need mobile bilingual advisors to hold drop-in hubs.',
-    assignedTab: 'Visibility',
-    region: 'north'
+    assignedTab: 'Home and Community',
+    region: 'north',
   },
   {
     id: 'gap-2',
@@ -31,8 +31,8 @@ const INITIAL_GAPS_OFFERS: GapOfferRequest[] = [
     organization: 'Rhondda Youth Association',
     contactEmail: 'rhiannon@rhondda-youth.org.uk',
     content: 'Apprentices and young workers in retail or hospitality cannot accept evening shifts because local bus services stop running after 7 PM across major valley routes.',
-    assignedTab: 'Transitions',
-    region: 'southeast'
+    assignedTab: 'Post-16 Education and Training',
+    region: 'southeast',
   },
   {
     id: 'offer-1',
@@ -42,7 +42,7 @@ const INITIAL_GAPS_OFFERS: GapOfferRequest[] = [
     organization: 'Clwyd Youth Innovators',
     contactEmail: 'info@clwydinnovators.org.uk',
     content: 'We have a batch of 20 fully refurbished, internet-ready laptops that we can donate to any community organisation running coding or software training sessions in Northeast Wales.',
-    assignedTab: 'Transitions',
+    assignedTab: 'Post-16 Education and Training',
     region: 'north'
   },
   {
@@ -53,7 +53,7 @@ const INITIAL_GAPS_OFFERS: GapOfferRequest[] = [
     organization: 'Cardiff Media Alliance',
     contactEmail: 'ceri@cardiffmedia.co.uk',
     content: 'Our industry members are offering 15 fully funded mentoring packages for young creatives aged 16-24 trying to break into film production or graphic design.',
-    assignedTab: 'Translation',
+    assignedTab: 'In Work',
     region: 'southeast'
   },
   {
@@ -64,7 +64,7 @@ const INITIAL_GAPS_OFFERS: GapOfferRequest[] = [
     organization: 'West Wales Coastal Tech Hub',
     contactEmail: 'sian@westcoastaltech.cymru',
     content: 'We are organising a careers panel for school-leavers in Aberystwyth on Aug 15th. We need 2-3 local software developers or IT managers to talk about entry-level tech roles.',
-    assignedTab: 'Visibility',
+    assignedTab: 'Home and Community',
     region: 'mid'
   },
   {
@@ -75,7 +75,7 @@ const INITIAL_GAPS_OFFERS: GapOfferRequest[] = [
     organization: 'Eryri Youth Forum',
     contactEmail: 'alun@eryriyouth.wales',
     content: 'Seeking local professional services firms in Gwynedd willing to host one-week job shadowing placements for bilingual students interested in business administration.',
-    assignedTab: 'Family Awareness',
+    assignedTab: 'School',
     region: 'north'
   },
   {
@@ -86,7 +86,7 @@ const INITIAL_GAPS_OFFERS: GapOfferRequest[] = [
     organization: 'Green Valley Eco-Builders',
     contactEmail: 'owen@greenvalleybuilders.wales',
     content: 'We want to partner with local housing associations to place 5 young trainees on solar retrofitting projects. Looking for associations with retrofitting budgets in Cardiff/Valleys.',
-    assignedTab: 'Progression',
+    assignedTab: 'Re-entry',
     region: 'southeast'
   },
   {
@@ -97,7 +97,7 @@ const INITIAL_GAPS_OFFERS: GapOfferRequest[] = [
     organization: 'Wrexham Youth Justice Service',
     contactEmail: 'megan.lloyd@wrexham.gov.uk',
     content: 'Seeking to design a streamlined referral mechanism matching young people leaving the justice system directly with local mentoring and skills provision.',
-    assignedTab: 'Navigation',
+    assignedTab: 'Entry to Work',
     region: 'north'
   }
 ];
@@ -112,7 +112,7 @@ const INITIAL_COMMITMENTS: Commitment[] = [
     progress: 'Active Pilot',
     nextSteps: 'Rent mobile van, schedule visits to 4 remote villages, deploy bilingual advisor.',
     dependencies: 'Requires mobile vehicle hire subsidy.',
-    assignedTab: 'Visibility',
+    assignedTab: 'Home and Community',
     region: 'southeast'
   },
   {
@@ -124,7 +124,7 @@ const INITIAL_COMMITMENTS: Commitment[] = [
     progress: 'Drafting',
     nextSteps: 'Finalise standard modules, recruit 3 local creative agencies for internships.',
     dependencies: 'Awaiting outcome of community fund grant.',
-    assignedTab: 'Translation',
+    assignedTab: 'In Work',
     region: 'north'
   },
   {
@@ -136,7 +136,7 @@ const INITIAL_COMMITMENTS: Commitment[] = [
     progress: 'Completed',
     nextSteps: 'All laptops distributed, mentoring programme kicked off with 15 regular attendees.',
     dependencies: 'None',
-    assignedTab: 'Transitions',
+    assignedTab: 'Post-16 Education and Training',
     region: 'north'
   },
   {
@@ -148,7 +148,7 @@ const INITIAL_COMMITMENTS: Commitment[] = [
     progress: 'Drafting',
     nextSteps: 'Draft course modules, align with modern retrofitting certification frameworks, review with college dean.',
     dependencies: 'College curriculum board approval.',
-    assignedTab: 'Progression',
+    assignedTab: 'Re-entry',
     region: 'southeast'
   },
   {
@@ -160,7 +160,7 @@ const INITIAL_COMMITMENTS: Commitment[] = [
     progress: 'Active Pilot',
     nextSteps: 'Establish drop-in training schedules in 3 local libraries, register initial student cohort.',
     dependencies: 'Volunteer staff coordination.',
-    assignedTab: 'Family Awareness',
+    assignedTab: 'School',
     region: 'mid'
   }
 ];
@@ -170,7 +170,7 @@ const INITIAL_EVIDENCE_LEARNING: EvidenceLearning[] = [
     id: 'log-1',
     title: 'Lived Experience: Transport is the primary barrier in Bangor',
     logType: 'Community Feedback',
-    assignedTab: 'Visibility',
+    assignedTab: 'Home and Community',
     description: 'A survey of 45 local young people in Bangor revealed that 75% missed advisory sessions simply because buses do not run after 5 PM from rural villages.',
     whatChanged: 'We are moving workshop timings to 3:30 PM and providing taxi vouchers where needed.',
     region: 'north'
@@ -179,7 +179,7 @@ const INITIAL_EVIDENCE_LEARNING: EvidenceLearning[] = [
     id: 'log-2',
     title: 'Tech Apprenticeship retention depends on early mentor pairing',
     logType: 'Delivery Learning',
-    assignedTab: 'Progression',
+    assignedTab: 'Re-entry',
     description: 'We found that young people from underrepresented backgrounds had a 40% higher retention rate in Welsh software firms if paired with a dedicated mentor in the first 2 weeks.',
     whatChanged: 'Drafting a "First 30 Days" employer guide to make mentor pairing mandatory for partners.',
     region: 'southeast'
@@ -253,6 +253,7 @@ export async function fetchOrganisations(): Promise<Organization[]> {
       return fetchOrganisations();
     }
 
+    const localMap = new Map(WELSH_ORGANIZATIONS.map(o => [o.id, o.journeyStages]));
     return data.map(item => ({
       id: item.id,
       name: item.name,
@@ -271,6 +272,11 @@ export async function fetchOrganisations(): Promise<Organization[]> {
       currentProject: item.current_project || '',
       solutions: item.solutions || [],
       description: item.description || '',
+      journeyStages: (item.journey_stages && Array.isArray(item.journey_stages) && item.journey_stages.length > 0)
+        ? item.journey_stages
+        : (item.journeyStages && Array.isArray(item.journeyStages) && item.journeyStages.length > 0)
+        ? item.journeyStages
+        : localMap.get(item.id) || (item.assigned_tab ? [item.assigned_tab] : []),
       contactEmail: item.contact_email,
       website: item.website,
       workingWithOaha: item.working_with_oaha ?? false
