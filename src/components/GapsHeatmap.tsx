@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { GapOfferRequest, FrictionPoint } from '../types';
 import { SYSTEMIC_TABS } from '../data';
+import { WALES_LOCAL_AUTHORITIES_DATA, LocalAuthorityData } from '../walesLocalAuthoritiesData';
 import { 
   Info, 
   MapPin, 
@@ -18,7 +19,8 @@ import {
   FileText,
   Filter,
   X,
-  Plus
+  Plus,
+  Search
 } from 'lucide-react';
 
 interface GapsHeatmapProps {
@@ -39,7 +41,7 @@ interface GapsHeatmapProps {
 }
 
 type TabType = 'map' | 'criteria';
-type MapMetric = 'struggle' | 'help' | 'gap';
+type MapMetric = 'deprivation' | 'gap' | 'struggle' | 'help';
 
 interface RegionData {
   id: string;
@@ -107,15 +109,15 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('map');
   
   // Tab 1 (Wales Map) State
-  const [selectedRegionId, setSelectedRegionId] = useState<string>('mid');
-  const [mapMetric, setMapMetric] = useState<MapMetric>('gap');
+  const [selectedLAName, setSelectedLAName] = useState<string>('Merthyr Tydfil');
+  const [mapMetric, setMapMetric] = useState<MapMetric>('deprivation');
 
   // Tab 2 (3-Criteria Heatmap) State
   const [selectedActivityId, setSelectedActivityId] = useState<FrictionPoint>('Home and Community');
 
   // Real Leaflet Map Hooks for geographical Wales heat overlay
   const heatMapRef = useRef<any>(null);
-  const regionLayersRef = useRef<Record<string, { coreCircle: any; midCircle: any; glowCircle: any }>>({});
+  const geoJsonLayerRef = useRef<any>(null);
   const gapsMarkersGroupRef = useRef<any>(null);
 
   // Function to plot all markers on the map
@@ -263,13 +265,13 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
     });
   };
 
+  // Initialize Leaflet Map and fetch Wales 22 Local Authorities GeoJSON Choropleth
   useEffect(() => {
     if (activeTab !== 'map') return;
 
     const L = (window as any).L;
     if (!L) return;
 
-    // Brief timeout to let container element render in DOM
     const timer = setTimeout(() => {
       const container = document.getElementById('wales-heatmap-real-map');
       if (!container || heatMapRef.current) return;
@@ -277,10 +279,10 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
       const mapInstance = L.map('wales-heatmap-real-map', {
         zoomControl: false,
         attributionControl: false,
-        scrollWheelZoom: false,
-      }).setView([52.25, -3.8], 7.5);
+        scrollWheelZoom: true,
+      }).setView([52.25, -3.8], 7.4);
 
-      // Light tiles to match organization directory
+      // Light tiles for clean baseline contrast
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 18,
         minZoom: 6
@@ -291,95 +293,122 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
       heatMapRef.current = mapInstance;
       gapsMarkersGroupRef.current = L.layerGroup().addTo(mapInstance);
 
-      // Plot initial markers
       plotAllMarkers(L);
 
-      const regionCoords: Record<string, [number, number]> = {
-        north: [53.05, -3.8],
-        mid: [52.35, -3.60],
-        southwest: [51.85, -4.30],
-        southeast: [51.65, -3.15]
-      };
+      // Fetch official Wales Local Authorities GeoJSON
+      fetch('/wales_local_authorities.json')
+        .then(res => res.json())
+        .then(geoData => {
+          if (!heatMapRef.current || !heatMapRef.current._container) return;
 
-      const layers: Record<string, { coreCircle: any; midCircle: any; glowCircle: any }> = {};
+          const getFeatureStyle = (feature: any) => {
+            const name = feature.properties?.LAD13NM || feature.properties?.LAD21NM || feature.properties?.LAD22NM || feature.properties?.name || '';
+            const data = WALES_LOCAL_AUTHORITIES_DATA[name];
+            const isSelected = selectedLAName === name;
 
-      regions.forEach((region) => {
-        const coords = regionCoords[region.id] || [52.25, -3.8];
-        
-        let color = '#4F6C82';
-        let radius = 28000;
+            let fillColor = '#94a3b8';
+            if (mapMetric === 'deprivation') {
+              const pct = data?.deprivationPct || 50;
+              if (pct >= 58) fillColor = '#be123c'; // Very High Deprivation (Critical Red)
+              else if (pct >= 54) fillColor = '#f97316'; // High Deprivation (Orange High Gap)
+              else if (pct >= 50) fillColor = '#eab308'; // Moderate Deprivation (Yellow)
+              else if (pct >= 45) fillColor = '#06b6d4'; // Low-Moderate (Cyan)
+              else fillColor = '#29B6BD'; // Low Deprivation (Logo Blue)
+            } else if (mapMetric === 'gap') {
+              const gap = data?.gapScore || 0;
+              if (gap >= 30) fillColor = '#be123c'; // Severe Deficit
+              else if (gap >= 15) fillColor = '#f97316'; // High Gap
+              else if (gap >= -5) fillColor = '#eab308'; // Balanced
+              else fillColor = '#06b6d4'; // Saturated
+            } else if (mapMetric === 'struggle') {
+              const st = data?.struggleScore || 50;
+              if (st >= 80) fillColor = '#be123c';
+              else if (st >= 65) fillColor = '#f97316';
+              else if (st >= 50) fillColor = '#eab308';
+              else fillColor = '#10b981';
+            } else { // 'help'
+              const hp = data?.helpScore || 50;
+              if (hp >= 70) fillColor = '#047857';
+              else if (hp >= 55) fillColor = '#0d9488';
+              else if (hp >= 40) fillColor = '#d97706';
+              else fillColor = '#e11d48';
+            }
 
-        if (mapMetric === 'struggle') {
-          color = region.struggleScore > 85 ? '#DE6B6B' : region.struggleScore > 65 ? '#E5A973' : '#E6C687';
-          radius = 24000 + (region.struggleScore * 180);
-        } else if (mapMetric === 'help') {
-          color = region.helpScore > 80 ? '#63B38F' : region.helpScore > 50 ? '#5FAAB3' : '#DE7A7A';
-          radius = 24000 + (region.helpScore * 180);
-        } else { // 'gap' (Struggle vs Help Mismatch)
-          color = region.gapScore > 50 ? '#DE6B6B' : region.gapScore > 10 ? '#E5A973' : region.gapScore > -10 ? '#E6C687' : '#5FAAB3';
-          radius = 24000 + (Math.abs(region.gapScore) * 200);
-        }
+            return {
+              fillColor,
+              weight: isSelected ? 3 : 1.2,
+              opacity: 1,
+              color: isSelected ? '#0f172a' : '#ffffff',
+              fillOpacity: isSelected ? 0.92 : 0.75
+            };
+          };
 
-        const isSelected = selectedRegionId === region.id;
+          const geoLayer = L.geoJSON(geoData, {
+            style: getFeatureStyle,
+            onEachFeature: (feature: any, layer: any) => {
+              const name = feature.properties?.LAD13NM || feature.properties?.LAD21NM || feature.properties?.LAD22NM || feature.properties?.name || '';
+              const data = WALES_LOCAL_AUTHORITIES_DATA[name];
 
-        // 1. Draw outer soft pulsing glow
-        const glowCircle = L.circle(coords, {
-          radius: radius * 1.8,
-          stroke: false,
-          fillColor: color,
-          fillOpacity: isSelected ? 0.12 : 0.05,
-          interactive: false
-        }).addTo(mapInstance);
+              const tooltipContent = `
+                <div class="p-2.5 font-sans space-y-1">
+                  <div class="font-bold text-[#1a2521] text-xs flex items-center justify-between gap-2">
+                    <span>${name}</span>
+                    <span class="text-[10px] text-teal-700 font-semibold italic">${data?.welshName || ''}</span>
+                  </div>
+                  <div class="text-[10px] text-slate-600 space-y-0.5 pt-1 border-t border-slate-100">
+                    <div>📊 <strong>ONS Household Deprivation:</strong> ${data?.deprivationPct || 0}%</div>
+                    <div>⚖️ <strong>Systemic Gap Index:</strong> ${data?.gapScore > 0 ? '+' : ''}${data?.gapScore || 0}%</div>
+                    <div>⚠️ <strong>Primary Friction:</strong> ${data?.barriers?.[0] || 'N/A'}</div>
+                  </div>
+                </div>
+              `;
 
-        // 2. Draw middle blended transition layer
-        const midCircle = L.circle(coords, {
-          radius: radius * 1.1,
-          stroke: false,
-          fillColor: color,
-          fillOpacity: isSelected ? 0.25 : 0.14,
-          interactive: false
-        }).addTo(mapInstance);
+              layer.bindTooltip(tooltipContent, { 
+                permanent: false, 
+                direction: 'top', 
+                className: 'rounded-xl shadow-md border border-slate-200 bg-white p-0 overflow-hidden' 
+              });
 
-        // 3. Draw interactive core circular layer
-        const coreCircle = L.circle(coords, {
-          radius: radius * 0.6,
-          color: '#ffffff',
-          weight: isSelected ? 2.5 : 0,
-          opacity: 0.9,
-          fillColor: color,
-          fillOpacity: isSelected ? 0.55 : 0.35,
-        }).addTo(mapInstance);
+              layer.on({
+                mouseover: (e: any) => {
+                  const l = e.target;
+                  l.setStyle({ weight: 2.8, color: '#0f172a', fillOpacity: 0.95 });
+                  l.bringToFront();
+                },
+                mouseout: (e: any) => {
+                  if (geoJsonLayerRef.current) {
+                    geoJsonLayerRef.current.resetStyle(e.target);
+                  }
+                },
+                click: (e: any) => {
+                  setSelectedLAName(name);
+                  if (heatMapRef.current && e.target.getBounds) {
+                    heatMapRef.current.fitBounds(e.target.getBounds(), { padding: [20, 20] });
+                  }
+                }
+              });
+            }
+          }).addTo(mapInstance);
 
-        let tooltipText = `<b>${region.name}</b> (${region.welshName})<br/>`;
-        if (mapMetric === 'struggle') tooltipText += `Struggle Index: ${region.struggleScore}%`;
-        else if (mapMetric === 'help') tooltipText += `Help Index: ${region.helpScore}%`;
-        else tooltipText += `Gap Index: ${region.gapScore > 0 ? '+' : ''}${region.gapScore}% (${region.gapScore > 10 ? 'Severe Deficit' : region.gapScore < -10 ? 'Resource Saturated' : 'Balanced'})`;
-
-        coreCircle.bindTooltip(tooltipText, {
-          permanent: false,
-          direction: 'top'
+          geoJsonLayerRef.current = geoLayer;
+        })
+        .catch(err => {
+          console.error('Failed to load Wales GeoJSON:', err);
         });
 
-        coreCircle.on('click', () => {
-          setSelectedRegionId(region.id);
-        });
-
-        layers[region.id] = { coreCircle, midCircle, glowCircle };
-      });
-
-      regionLayersRef.current = layers;
-
-      // Add major Welsh cities as markers
+      // Add key city markers
       const cities = [
         { name: 'Bangor', coords: [53.228, -4.128] },
         { name: 'Cardiff (Capital)', coords: [51.481, -3.179] },
         { name: 'Aberystwyth', coords: [52.414, -4.085] },
-        { name: 'Swansea', coords: [51.621, -3.943] }
+        { name: 'Swansea', coords: [51.621, -3.943] },
+        { name: 'Wrexham', coords: [53.046, -2.993] },
+        { name: 'Merthyr Tydfil', coords: [51.748, -3.378] }
       ];
 
       cities.forEach(city => {
         L.circleMarker(city.coords, {
-          radius: 4.5,
+          radius: 4,
           color: '#1a2521',
           weight: 1.5,
           fillColor: '#ffffff',
@@ -402,30 +431,19 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
     };
   }, [activeTab, mapMetric]);
 
-  // Update circle highlights dynamically when selected region state changes
+  // Update styles on selected local authority change
   useEffect(() => {
-    if (activeTab !== 'map' || !regionLayersRef.current) return;
-
-    regions.forEach((region) => {
-      const layer = regionLayersRef.current[region.id];
-      if (!layer) return;
-
-      const isSelected = selectedRegionId === region.id;
-      
-      layer.coreCircle.setStyle({
-        weight: isSelected ? 2.5 : 0,
-        fillOpacity: isSelected ? 0.55 : 0.35
-      });
-
-      layer.midCircle.setStyle({
-        fillOpacity: isSelected ? 0.25 : 0.14
-      });
-
-      layer.glowCircle.setStyle({
-        fillOpacity: isSelected ? 0.12 : 0.05
-      });
+    if (!geoJsonLayerRef.current || activeTab !== 'map') return;
+    geoJsonLayerRef.current.eachLayer((layer: any) => {
+      const name = layer.feature?.properties?.LAD13NM || layer.feature?.properties?.LAD21NM || layer.feature?.properties?.LAD22NM || layer.feature?.properties?.name;
+      if (name === selectedLAName) {
+        layer.setStyle({ weight: 3, color: '#0f172a', fillOpacity: 0.95 });
+        layer.bringToFront();
+      } else {
+        geoJsonLayerRef.current.resetStyle(layer);
+      }
     });
-  }, [selectedRegionId, activeTab]);
+  }, [selectedLAName, activeTab, mapMetric]);
 
   // Synchronize Leaflet map pins for Gaps, Offers, Requests & Mapped Projects
   useEffect(() => {
@@ -490,8 +508,8 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
 
   // Selected region data
   const selectedRegion = useMemo(() => {
-    return regions.find(r => r.id === selectedRegionId) || regions[1];
-  }, [regions, selectedRegionId]);
+    return regions[1];
+  }, [regions]);
 
   const activeHeatColor = useMemo(() => {
     if (mapMetric === 'struggle') {
@@ -717,7 +735,15 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
           {/* Map Metric Layer Toggles */}
           {activeTab === 'map' && (
             <div className="flex items-center gap-1.5 bg-[#F4F4F0] border border-[#e1e1db] rounded-xl p-1 text-[10px]">
-              <span className="px-2 font-bold text-[#51615a] text-[9px] uppercase tracking-wider hidden sm:inline">Layer:</span>
+              <span className="px-2 font-bold text-[#51615a] text-[9px] uppercase tracking-wider hidden sm:inline">Choropleth Layer:</span>
+              <button
+                onClick={() => setMapMetric('deprivation')}
+                className={`px-3 py-1 font-bold rounded-lg transition cursor-pointer ${
+                  mapMetric === 'deprivation' ? 'bg-[#29B6BD] text-white shadow-2xs' : 'text-[#51615a] hover:text-[#1a2521]'
+                }`}
+              >
+                ONS Deprivation Index
+              </button>
               <button
                 onClick={() => setMapMetric('gap')}
                 className={`px-3 py-1 font-bold rounded-lg transition cursor-pointer ${
@@ -813,244 +839,241 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
       </div>
 
       {/* RENDER TAB 1: WALES REGIONAL HEAT MAP */}
-      {activeTab === 'map' && (
-        <div id="wales-regional-heatmap-view" className="bg-white rounded-2xl border border-[#e1e1db] overflow-hidden shadow-xs">
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              
-              {/* Real Geographical Leaflet Wales Map */}
-              <div className="lg:col-span-6 flex flex-col justify-between bg-white rounded-2xl border border-[#e1e1db] p-4 relative min-h-[440px]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold text-[#29B6BD] uppercase tracking-wider flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>Real-World Geospatial Model</span>
-                  </span>
-                  <span className="text-[9px] text-[#51615a] bg-[#F4F4F0] px-2 py-0.5 rounded-md font-semibold">
-                    Interactive Overlay
-                  </span>
+      {activeTab === 'map' && (() => {
+        const selectedLA = WALES_LOCAL_AUTHORITIES_DATA[selectedLAName] || WALES_LOCAL_AUTHORITIES_DATA['Merthyr Tydfil'];
+        const allLAs = Object.values(WALES_LOCAL_AUTHORITIES_DATA);
+
+        return (
+          <div id="wales-regional-heatmap-view" className="bg-white rounded-2xl border border-[#e1e1db] overflow-hidden shadow-xs">
+            <div className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                {/* Real Geographical Leaflet Wales Map */}
+                <div className="lg:col-span-6 flex flex-col justify-between bg-white rounded-2xl border border-[#e1e1db] p-4 relative min-h-[440px]">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-bold text-[#29B6BD] uppercase tracking-wider flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-[#29B6BD]" />
+                      <span>ONS Census Choropleth (22 Welsh Local Authorities)</span>
+                    </span>
+                    <span className="text-[9px] text-[#176e73] bg-[#f0fdfa] px-2 py-0.5 rounded-md font-extrabold border border-[#99f6e4]">
+                      Exact Administrative Borders
+                    </span>
+                  </div>
+
+                  {/* Map Container */}
+                  <div 
+                    id="wales-heatmap-real-map" 
+                    className="w-full h-[360px] rounded-xl border border-gray-200 shadow-inner overflow-hidden z-10" 
+                    style={{ minHeight: '360px' }}
+                  />
+
+                  {/* Legend bar */}
+                  <div className="mt-3 bg-[#F4F4F0] border border-[#e1e1db] p-3 rounded-xl space-y-2 text-[10px] text-[#51615a]">
+                    {/* Pin Types Legend */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#e1e1db]">
+                      <span className="font-bold text-[#1a2521]">Map Markers:</span>
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <div className="flex items-center gap-1" title="Mapped Organisation Projects">
+                          <span className="w-4 h-4 rounded-full bg-[#29B6BD] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-2xs">P</span>
+                          <span className="font-semibold text-[#1a2521]">Projects</span>
+                        </div>
+                        <div className="flex items-center gap-1" title="Active Offers">
+                          <span className="w-4 h-4 rounded-full bg-[#0D9488] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-2xs">★</span>
+                          <span className="font-semibold text-[#1a2521]">Offers</span>
+                        </div>
+                        <div className="flex items-center gap-1" title="Resource Requests">
+                          <span className="w-4 h-4 rounded-full bg-[#D97706] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-2xs">?</span>
+                          <span className="font-semibold text-[#1a2521]">Requests</span>
+                        </div>
+                        <div className="flex items-center gap-1" title="Collaborations">
+                          <span className="w-4 h-4 rounded-full bg-[#2563EB] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-2xs">C</span>
+                          <span className="font-semibold text-[#1a2521]">Collaborations</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Choropleth Heatmap Scale */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[9px]">
+                      <span className="font-bold text-[#51615a]">
+                        {mapMetric === 'deprivation' ? 'ONS Household Deprivation (% 1+ dim):' : 'Choropleth Scale:'}
+                      </span>
+                      {mapMetric === 'deprivation' ? (
+                        <>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-[#29B6BD]" />
+                            <span>&lt;45% Low</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-[#06b6d4]" />
+                            <span>45-50%</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-[#eab308]" />
+                            <span>50-54%</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-[#f97316]" />
+                            <span>54-58% High</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-[#be123c]" />
+                            <span>&gt;58% Very High</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-[#be123c]" />
+                            <span>Critical Deficit</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-[#f97316]" />
+                            <span>High Gap</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-[#eab308]" />
+                            <span>Balanced</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-[#06b6d4]" />
+                            <span>Supported</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Map Container */}
+                {/* Local Authority Diagnostic / Right Sidebar Column */}
                 <div 
-                  id="wales-heatmap-real-map" 
-                  className="w-full h-[340px] rounded-xl border border-gray-200 shadow-inner overflow-hidden z-10" 
-                  style={{ minHeight: '340px' }}
-                />
-
-                {/* Legend bar */}
-                <div className="mt-3 bg-[#F4F4F0] border border-[#e1e1db] p-3 rounded-xl space-y-2 text-[10px] text-[#51615a]">
-                  {/* Pin Types Legend */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#e1e1db]">
-                    <span className="font-bold text-[#1a2521]">Map Markers:</span>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <div className="flex items-center gap-1" title="Mapped Organisation Projects">
-                        <span className="w-4 h-4 rounded-full bg-[#29B6BD] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-2xs">P</span>
-                        <span className="font-semibold text-[#1a2521]">Projects</span>
-                      </div>
-                      <div className="flex items-center gap-1" title="Active Offers">
-                        <span className="w-4 h-4 rounded-full bg-[#0D9488] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-2xs">★</span>
-                        <span className="font-semibold text-[#1a2521]">Offers</span>
-                      </div>
-                      <div className="flex items-center gap-1" title="Resource Requests">
-                        <span className="w-4 h-4 rounded-full bg-[#D97706] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-2xs">?</span>
-                        <span className="font-semibold text-[#1a2521]">Requests</span>
-                      </div>
-                      <div className="flex items-center gap-1" title="Collaborations">
-                        <span className="w-4 h-4 rounded-full bg-[#2563EB] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-2xs">C</span>
-                        <span className="font-semibold text-[#1a2521]">Collaborations</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Heatmap Layer Legend */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-[9px]">
-                    <span className="font-bold text-[#51615a]">Regional Heat Layer:</span>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#DE6B6B' }} />
-                      <span>Deficit ({mapMetric === 'gap' ? '>50%' : mapMetric === 'struggle' ? '>85%' : '<30%'})</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#E5A973' }} />
-                      <span>Moderate</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#E6C687' }} />
-                      <span>Optimal</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#5FAAB3' }} />
-                      <span>Saturated</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Region Details / Right Sidebar Column */}
-              <div 
-                className="lg:col-span-6 flex flex-col justify-between bg-[#F4F4F0]/30 rounded-2xl border-t border-r border-b p-6 transition-all duration-300"
-                style={{ 
-                  borderLeftWidth: '5px',
-                  borderLeftColor: activeHeatColor,
-                  borderTopColor: '#e1e1db',
-                  borderRightColor: '#e1e1db',
-                  borderBottomColor: '#e1e1db'
-                }}
-              >
-                <div className="space-y-5">
-                  <div className="space-y-1.5 pb-3 border-b border-[#e1e1db]">
-                    <div className="flex items-center justify-between">
-                      <span 
-                        className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded text-white transition-all duration-300"
-                        style={{ backgroundColor: activeHeatColor }}
-                      >
-                        Region Diagnostic
-                      </span>
-                      <span className="text-[10px] font-bold text-[#51615a] italic">{selectedRegion.welshName}</span>
-                    </div>
-                    <h5 className="text-base font-extrabold text-[#1a2521] flex items-center gap-1.5 mt-2">
-                      <MapPin 
-                        className="w-4 h-4 shrink-0 transition-colors duration-300" 
-                        style={{ color: activeHeatColor }}
-                      />
-                      <span>{selectedRegion.name}</span>
-                    </h5>
-                    <p className="text-[11px] text-[#51615a] leading-relaxed pt-1">
-                      {selectedRegion.details}
-                    </p>
-                  </div>
-
-                  {/* Quantitative Metrics bars */}
-                  <div className="space-y-3.5">
-                    <div className="flex items-center justify-between">
-                      <h6 className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider">Metrics Overlay Scorecard</h6>
-                      <span className="text-[8px] font-extrabold uppercase text-[#176e73] tracking-wide bg-white border border-[#e1e1db] px-1.5 py-0.5 rounded">
-                        Map plot: {mapMetric.toUpperCase()}
-                      </span>
-                    </div>
+                  className="lg:col-span-6 flex flex-col justify-between bg-[#F4F4F0]/30 rounded-2xl border-t border-r border-b p-6 transition-all duration-300 border-l-4 border-l-[#29B6BD] border-[#e1e1db]"
+                >
+                  <div className="space-y-5">
                     
-                    {/* Struggle score */}
-                    <div className={`space-y-1 p-2 rounded-lg transition-all duration-300 ${mapMetric === 'struggle' ? 'bg-white border border-[#e1e1db]/80 shadow-3xs' : ''}`}>
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className={`font-semibold ${mapMetric === 'struggle' ? 'font-bold text-[#1a2521]' : 'text-slate-600'}`}>
-                          Struggle / Challenge index:
+                    {/* Header & Local Authority Dropdown Selector */}
+                    <div className="space-y-3 pb-3 border-b border-[#e1e1db]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded text-white bg-[#29B6BD]">
+                          ONS Local Authority Profile
                         </span>
-                        <span className="font-black" style={{ color: mapMetric === 'struggle' ? activeHeatColor : '#DE6B6B' }}>
-                          {selectedRegion.struggleScore}%
+                        <span className="text-[10px] font-bold text-[#51615a] italic">{selectedLA.welshName}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 pt-1">
+                        <h5 className="text-lg font-extrabold text-[#1a2521] flex items-center gap-1.5">
+                          <MapPin className="w-5 h-5 text-[#29B6BD] shrink-0" />
+                          <span>{selectedLA.name}</span>
+                        </h5>
+
+                        {/* Dropdown selector for all 22 Local Authorities */}
+                        <div className="relative">
+                          <select
+                            value={selectedLAName}
+                            onChange={(e) => {
+                              setSelectedLAName(e.target.value);
+                            }}
+                            className="px-3 py-1.5 text-xs border border-[#29B6BD] rounded-xl bg-white text-[#29B6BD] font-bold focus:outline-none focus:ring-2 focus:ring-[#29B6BD] shadow-2xs cursor-pointer"
+                          >
+                            {allLAs.map((la) => (
+                              <option key={la.name} value={la.name}>
+                                {la.name} ({la.welshName})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <p className="text-[11px] text-[#51615a] leading-relaxed">
+                        Official administrative boundary metrics for <strong>{selectedLA.name}</strong> ({selectedLA.welshName}) in {selectedLA.region.toUpperCase()} Wales.
+                      </p>
+                    </div>
+
+                    {/* Scorecard */}
+                    <div className="space-y-3.5">
+                      <div className="flex items-center justify-between">
+                        <h6 className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider">Local Authority Metrics</h6>
+                        <span className="text-[9px] font-extrabold uppercase text-[#29B6BD] tracking-wide bg-[#f0fdfa] border border-[#99f6e4] px-2 py-0.5 rounded-full">
+                          2021 ONS Census Data
                         </span>
                       </div>
-                      <div className="w-full bg-slate-100 border border-slate-200/50 h-2.5 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full rounded-full transition-all duration-500" 
-                          style={{ 
-                            width: `${selectedRegion.struggleScore}%`,
-                            backgroundColor: mapMetric === 'struggle' ? activeHeatColor : '#DE6B6B'
-                          }} 
-                        />
+                      
+                      {/* ONS Household Deprivation */}
+                      <div className="space-y-1 p-2.5 rounded-xl bg-white border border-[#e1e1db]/80 shadow-3xs">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-[#1a2521]">
+                            Household Deprivation (1+ Dimension):
+                          </span>
+                          <span className="font-black text-[#29B6BD]">
+                            {selectedLA.deprivationPct}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 border border-slate-200/50 h-2.5 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full transition-all duration-500 bg-[#29B6BD]" 
+                            style={{ width: `${selectedLA.deprivationPct}%` }} 
+                          />
+                        </div>
+                        <div className="text-[9px] text-slate-500 pt-0.5">
+                          % of households deprived in Education, Employment, Health, or Housing.
+                        </div>
+                      </div>
+
+                      {/* Systemic Gap Index */}
+                      <div className="space-y-1 p-2.5 rounded-xl bg-white border border-[#e1e1db]/80 shadow-3xs">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-[#1a2521]">
+                            Systemic Gap Index (Deficit vs Support):
+                          </span>
+                          <span className={`font-black ${selectedLA.gapScore > 20 ? 'text-rose-600' : 'text-teal-700'}`}>
+                            {selectedLA.gapScore > 0 ? `+${selectedLA.gapScore}% Deficit` : `${selectedLA.gapScore}% Saturated`}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 border border-slate-200/50 h-2.5 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${selectedLA.gapScore > 20 ? 'bg-rose-600' : 'bg-teal-600'}`} 
+                            style={{ width: `${Math.min(100, Math.max(15, Math.abs(selectedLA.gapScore) * 1.2))}%` }} 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Key Local Friction Barriers */}
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block">Key Regional Friction Factors:</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedLA.barriers.map((barrier, idx) => (
+                            <span key={idx} className="px-2.5 py-1 text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200 rounded-lg">
+                              • {barrier}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Help Received score */}
-                    <div className={`space-y-1 p-2 rounded-lg transition-all duration-300 ${mapMetric === 'help' ? 'bg-white border border-[#e1e1db]/80 shadow-3xs' : ''}`}>
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className={`font-semibold ${mapMetric === 'help' ? 'font-bold text-[#1a2521]' : 'text-slate-600'}`}>
-                          Help Received (Support Program strength):
-                        </span>
-                        <span className="font-black" style={{ color: mapMetric === 'help' ? activeHeatColor : '#63B38F' }}>
-                          {selectedRegion.helpScore}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-100 border border-slate-200/50 h-2.5 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full rounded-full transition-all duration-500" 
-                          style={{ 
-                            width: `${selectedRegion.helpScore}%`,
-                            backgroundColor: mapMetric === 'help' ? activeHeatColor : '#63B38F'
-                          }} 
-                        />
+                    {/* Recommendation */}
+                    <div className="bg-white p-4 rounded-xl border border-[#e1e1db]/85 shadow-3xs space-y-2">
+                      <div className="flex items-start gap-2.5">
+                        <Sparkles className="w-4.5 h-4.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-bold text-[#29B6BD] uppercase tracking-wider block">Targeted Intervention Note</span>
+                          <p className="text-[11px] text-[#1a2521] leading-relaxed">
+                            {selectedLA.deprivationPct > 55 ? (
+                              <><strong>{selectedLA.name}</strong> exhibits high deprivation levels ({selectedLA.deprivationPct}%). Recommended focus: high-impact grassroots resourcing, transport access, and direct local partnership funding.</>
+                            ) : (
+                              <><strong>{selectedLA.name}</strong> maintains stable baseline support ({selectedLA.deprivationPct}% deprivation). Focus on cross-sector collaboration and digital connectivity.</>
+                            )}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Gap Severity score */}
-                    <div className={`space-y-1 p-2 rounded-lg transition-all duration-300 ${mapMetric === 'gap' ? 'bg-white border border-[#e1e1db]/80 shadow-3xs' : ''}`}>
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className={`font-semibold ${mapMetric === 'gap' ? 'font-bold text-[#1a2521]' : 'text-slate-600'}`}>
-                          Systemic Gap (Struggle vs Help Mismatch):
-                        </span>
-                        <span className="font-black" style={{ color: mapMetric === 'gap' ? activeHeatColor : '#4F6C82' }}>
-                          {selectedRegion.gapScore > 0 ? `+${selectedRegion.gapScore}% Deficit` : `${selectedRegion.gapScore}% Saturated`}
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-100 border border-slate-200/50 h-2.5 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full rounded-full transition-all duration-500" 
-                          style={{ 
-                            width: `${Math.min(100, Math.max(10, Math.abs(selectedRegion.gapScore)))}%`,
-                            backgroundColor: mapMetric === 'gap' ? activeHeatColor : '#4F6C82'
-                          }} 
-                        />
-                      </div>
-                    </div>
                   </div>
-
-                  {/* Regional strategic directive advice */}
-                  <div className="bg-white p-4 rounded-xl border border-[#e1e1db]/85 shadow-3xs space-y-3">
-                    <div className="flex items-start gap-2.5">
-                      <Sparkles className="w-4.5 h-4.5 text-[#29B6BD] shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <span className="text-[9px] font-bold text-[#176e73] uppercase tracking-wider block">Strategic Recommendation</span>
-                        <p className="text-[11px] text-[#1a2521] leading-relaxed">
-                          {selectedRegion.gapScore > 30 ? (
-                            <span><strong>High priority resource redirect:</strong> This region exhibits critical structural deficits. Redirection of unused or excess equipment donations, Welsh translations, and transition mentors from South East hubs is strongly advised.</span>
-                          ) : selectedRegion.gapScore < -20 ? (
-                            <span><strong>Strategic transition buffer:</strong> South East Wales is heavily saturated with tech funding. Maintain current support baseline, but cap or redirect any new corporate commitments towards Mid and West Wales valleys.</span>
-                          ) : (
-                            <span><strong>Systemic balance optimal:</strong> Current local volunteer offerings are in equilibrium with reported barriers. No drastic changes recommended. Focus on documentation of local best practices.</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Regional Filter Toggle Button */}
-                    {onRegionFilterChange && (
-                      <div className="pt-2 border-t border-dashed border-[#e1e1db]">
-                        <button
-                          onClick={() => {
-                            if (selectedRegionFilter === selectedRegion.id) {
-                              onRegionFilterChange('All');
-                            } else {
-                              onRegionFilterChange(selectedRegion.id);
-                            }
-                          }}
-                          className={`w-full py-2 px-3 rounded-xl text-[10px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-3xs ${
-                            selectedRegionFilter === selectedRegion.id
-                              ? 'bg-[#1a2521] hover:bg-[#1a2521]/90 text-white'
-                              : 'bg-white hover:bg-[#F4F4F0] text-[#176e73] border border-[#e1e1db]'
-                          }`}
-                        >
-                          {selectedRegionFilter === selectedRegion.id ? (
-                            <>
-                              <X className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
-                              <span>Remove {selectedRegion.name} Filter</span>
-                            </>
-                          ) : (
-                            <>
-                              <Filter className="w-3.5 h-3.5 text-[#29B6BD]" />
-                              <span>Filter Project Grids to {selectedRegion.name}</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
                 </div>
-              </div>
 
+              </div>
             </div>
           </div>
-
-        </div>
-      )}
+        );
+      })()}
 
       {/* RENDER TAB 2: GRADIENT 3-CRITERIA HEAT MAP (MATCHING PRESENTATION TEMPLATE IMAGE) */}
       {activeTab === 'criteria' && (
