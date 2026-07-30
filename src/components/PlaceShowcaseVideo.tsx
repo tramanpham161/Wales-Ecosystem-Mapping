@@ -9,10 +9,14 @@ import {
 } from 'lucide-react';
 
 const exactPhoto = '/wales_workshop_exact_photo_1785063346660.jpg';
-const thumbnailPhoto = '/EL-2-3.jpg';
-const aliasPhoto = '/wales_workshop_preview.jpg';
+const thumbnailPhoto = '/wales_workshop_thumbnail_1785063122767.jpg';
 
-export const PlaceShowcaseVideo: React.FC = () => {
+interface PlaceShowcaseVideoProps {
+  placeName?: 'Wales' | 'Yorkshire';
+}
+
+export const PlaceShowcaseVideo: React.FC<PlaceShowcaseVideoProps> = ({ placeName = 'Wales' }) => {
+  const isYorkshire = placeName === 'Yorkshire';
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPhoto, setCurrentPhoto] = useState(exactPhoto);
   const [videoError, setVideoError] = useState(false);
@@ -24,9 +28,9 @@ export const PlaceShowcaseVideo: React.FC = () => {
 
   const handleImageError = () => {
     if (currentPhoto === exactPhoto) {
-      setCurrentPhoto(aliasPhoto);
-    } else if (currentPhoto === aliasPhoto) {
       setCurrentPhoto(thumbnailPhoto);
+    } else if (currentPhoto === thumbnailPhoto) {
+      setCurrentPhoto('/OD-1.jpg');
     }
   };
 
@@ -71,7 +75,7 @@ export const PlaceShowcaseVideo: React.FC = () => {
                 {/* Badge on bottom left */}
                 <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1 rounded-lg text-[11px] text-white font-medium flex items-center gap-1.5 z-10 border border-white/20">
                   <Video className="w-3.5 h-3.5 text-[#29B6BD]" />
-                  <span>Wales Place-Based Workshop Wrap-up Film</span>
+                  <span>{isYorkshire ? 'Yorkshire Place-Based Workshop Wrap-up Film' : 'Wales Place-Based Workshop Wrap-up Film'}</span>
                 </div>
               </div>
             ) : (
@@ -102,7 +106,7 @@ export const PlaceShowcaseVideo: React.FC = () => {
           {/* Optional notice if video file is 0 bytes */}
           {videoError && (
             <p className="mt-2 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 leading-tight">
-              ⚠️ Note: The uploaded local video file (<code className="font-mono">public/OAHA_WALES...mp4</code>) is 0 bytes (empty placeholder). Playing sample video preview instead. Replace the file in <code className="font-mono">public/</code> with your full video.
+              ⚠️ Note: The uploaded local video file (<code className="font-mono">public/OAHA_{isYorkshire ? 'YORKSHIRE' : 'WALES'}...mp4</code>) is 0 bytes (empty placeholder). Playing sample video preview instead. Replace the file in <code className="font-mono">public/</code> with your full video.
             </p>
           )}
         </div>
@@ -115,18 +119,20 @@ export const PlaceShowcaseVideo: React.FC = () => {
             <div className="space-y-2 relative pt-2">
               <Quote className="w-10 h-10 text-[#29B6BD]/25 absolute -top-3 -left-2 rotate-180" />
               <blockquote className="pl-7 text-xl sm:text-2xl font-extrabold tracking-tight leading-snug italic text-transparent bg-clip-text bg-gradient-to-r from-[#177277] via-[#29B6BD] to-[#258732]">
-                There is talent in Wales, we're just not using it.
+                {isYorkshire ? "There is talent in Yorkshire, we're just not using it." : "There is talent in Wales, we're just not using it."}
               </blockquote>
             </div>
 
-            {/* 2. WHAT HAS BEEN DONE IN WALES */}
+            {/* 2. WHAT HAS BEEN DONE */}
             <div className="pt-4 border-t border-[#e1e1db]/80 space-y-2">
               <h4 className="text-xs font-bold text-[#1a2521] uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[#F89E1B]" />
-                <span>What Has Been Done in Wales</span>
+                <span>What Has Been Done in {isYorkshire ? 'Yorkshire' : 'Wales'}</span>
               </h4>
               <p className="text-xs text-[#51615a] leading-relaxed">
-                Bringing together youth leaders, local authorities, employers, and community partners in Cardiff to co-design tangible pathways from school and education directly into meaningful local employment.
+                {isYorkshire 
+                  ? "Bringing together youth leaders, local authorities, employers, and community partners across South and West Yorkshire to co-design tangible pathways from school and education directly into meaningful local employment."
+                  : "Bringing together youth leaders, local authorities, employers, and community partners in Cardiff to co-design tangible pathways from school and education directly into meaningful local employment."}
               </p>
             </div>
 
