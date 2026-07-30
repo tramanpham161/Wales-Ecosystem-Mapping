@@ -28,6 +28,7 @@ export interface Organization {
   currentProject: string; // brief sentence describing their current Welsh initiative
   solutions: string[]; // what they are actively doing to solve that specific tab's friction point
   description: string; // a short general description of the organization
+  journeyStages: string[];
   contactEmail?: string;
   website?: string;
   workingWithOaha?: boolean;
