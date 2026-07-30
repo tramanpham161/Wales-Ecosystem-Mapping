@@ -29,6 +29,7 @@ import {
   FileText,
   AlertTriangle,
   ArrowRight,
+  ArrowLeft,
   ClipboardList,
   BookOpen,
   MessageSquare,
@@ -40,7 +41,8 @@ import {
   Bookmark,
   LogOut,
   Building2,
-  ChevronDown
+  ChevronDown,
+  AlertCircle
 } from 'lucide-react';
 import { SYSTEMIC_TABS } from './data';
 import { FrictionPoint, Organization, SectorType, LookingForType, GapOfferRequest, Commitment, EvidenceLearning, SubmissionType, UserProfile } from './types';
@@ -50,6 +52,9 @@ import { GapsHeatmap } from './components/GapsHeatmap';
 import { PlaceShowcaseVideo } from './components/PlaceShowcaseVideo';
 import { OrganisationPhotoGrid } from './components/OrganisationPhotoGrid';
 import { ProjectShowcaseCarousel } from './components/ProjectShowcaseCarousel';
+import { WorkDiagram } from './components/WorkDiagram';
+import { PlaceCensusMap } from './components/PlaceCensusMap';
+import { YORKSHIRE_ORGANIZATIONS, YORKSHIRE_GAPS_OFFERS, YORKSHIRE_COMMITMENTS, YORKSHIRE_EVIDENCE_LEARNING } from './dataYorkshire';
 import { 
   getDbStatus, 
   fetchOrganisations, 
@@ -355,6 +360,9 @@ const DEMO_PROFILES: UserProfile[] = [
 type AlphaTab = 'overview' | 'journey' | 'directory' | 'gaps_offers' | 'commitments' | 'evidence_learning';
 
 export default function App() {
+  // Active Place Selection ('wales' | 'yorkshire' | null -> null means Home Landing Page)
+  const [selectedPlace, setSelectedPlace] = useState<'wales' | 'yorkshire' | null>(null);
+
   // Alpha Active Tab View
   const [currentAlphaTab, setCurrentAlphaTab] = useState<AlphaTab>('overview');
 
@@ -433,12 +441,19 @@ export default function App() {
     region: '' as string,
     category: '' as string,
     urgency: '' as string,
-    workingWithOaha: false
+    workingWithOaha: false,
+    place: 'wales' as 'wales' | 'yorkshire'
   });
 
   // Display State for Submissions Grid (Collapsible to prevent cluttered views)
   const [showAllSubmissions, setShowAllSubmissions] = useState(false);
   const [submissionsViewMode, setSubmissionsViewMode] = useState<'grid' | 'table'>('grid');
+
+  // Yorkshire Overview Modal State
+  const [showYorkshireOverview, setShowYorkshireOverview] = useState(false);
+
+  // Audience Cards State
+  const [expandedAudienceCard, setExpandedAudienceCard] = useState<string | null>('community');
 
   // Form State for Adding new Commitment
   const [isAddCommitOpen, setIsAddCommitOpen] = useState(false);
@@ -523,6 +538,9 @@ export default function App() {
   const [regError, setRegError] = useState('');
   const [regSuccess, setRegSuccess] = useState('');
 
+  // Region choice prompt state when selecting exploration tasks from home page
+  const [placePromptTarget, setPlacePromptTarget] = useState<AlphaTab | 'contribute' | null>(null);
+
   // Toggle bookmark / saved item
   const toggleSaveItem = (itemId: string) => {
     if (!currentUser) {
@@ -558,7 +576,8 @@ export default function App() {
         submittedBy: currentUser.name,
         organization: currentUser.type === 'organisation' || currentUser.type === 'business' ? currentUser.name : 'Individual Partner',
         contactEmail: currentUser.contactEmail,
-        region: currentUser.region || ''
+        region: currentUser.region || '',
+        place: selectedPlace || 'wales'
       }));
     } else {
       setGapForm(prev => ({
@@ -566,7 +585,8 @@ export default function App() {
         submittedBy: '',
         organization: '',
         contactEmail: '',
-        region: ''
+        region: '',
+        place: selectedPlace || 'wales'
       }));
     }
     setIsAddGapOpen(true);
@@ -636,9 +656,37 @@ export default function App() {
     refreshAllData();
   }, []);
 
+  // Scroll to top when tab or place changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [currentAlphaTab, selectedPlace]);
+
+  // Base datasets based on selected place
+  const baseOrganizations = useMemo(() => {
+    if (selectedPlace === 'yorkshire') return YORKSHIRE_ORGANIZATIONS;
+    return organizations;
+  }, [selectedPlace, organizations]);
+
+  const baseGapsOffers = useMemo(() => {
+    if (selectedPlace === 'yorkshire') return YORKSHIRE_GAPS_OFFERS;
+    return gapsOffers;
+  }, [selectedPlace, gapsOffers]);
+
+  const baseCommitments = useMemo(() => {
+    if (selectedPlace === 'yorkshire') return YORKSHIRE_COMMITMENTS;
+    return commitments;
+  }, [selectedPlace, commitments]);
+
+  const baseEvidenceLearning = useMemo(() => {
+    if (selectedPlace === 'yorkshire') return YORKSHIRE_EVIDENCE_LEARNING;
+    return evidenceLearning;
+  }, [selectedPlace, evidenceLearning]);
+
   // 2. Filter the organizations dynamically for directory
   const filteredOrganizations = useMemo(() => {
-    return organizations.filter((org) => {
+    return baseOrganizations.filter((org) => {
       if (activeTab !== 'All') {
         const stages = (org.journeyStages && org.journeyStages.length > 0)
           ? org.journeyStages
@@ -666,11 +714,11 @@ export default function App() {
       }
       return true;
     });
-  }, [organizations, activeTab, sectorFilter, lookingForFilter, searchQuery, selectedRegionFilter]);
+  }, [baseOrganizations, activeTab, sectorFilter, lookingForFilter, searchQuery, selectedRegionFilter]);
 
   // 3. Filter the gaps, offers & requests dynamically
   const filteredGapsOffers = useMemo(() => {
-    return gapsOffers.filter((g) => {
+    return baseGapsOffers.filter((g) => {
       // Stage / Pathway Stage Filter
       if (activeTab && activeTab !== 'All') {
         const matchesTab = (g.assignedTab || '') === activeTab;
@@ -699,11 +747,11 @@ export default function App() {
 
       return true;
     });
-  }, [gapsOffers, activeTab, gapTypeFilter, gapCategoryFilter, gapUrgencyFilter, selectedRegionFilter]);
+  }, [baseGapsOffers, activeTab, gapTypeFilter, gapCategoryFilter, gapUrgencyFilter, selectedRegionFilter]);
 
   // 4. Filter the commitments dynamically
   const filteredCommitments = useMemo(() => {
-    return commitments.filter((c) => {
+    return baseCommitments.filter((c) => {
       if (commitProgressFilter !== 'All' && c.progress !== commitProgressFilter) return false;
       if (selectedRegionFilter !== 'All') {
         const r = c.region || getRegionForCommitment(c);
@@ -711,11 +759,11 @@ export default function App() {
       }
       return true;
     });
-  }, [commitments, commitProgressFilter, selectedRegionFilter]);
+  }, [baseCommitments, commitProgressFilter, selectedRegionFilter]);
 
   // 5. Filter the evidence and learning logs dynamically
   const filteredEvidenceLearning = useMemo(() => {
-    return evidenceLearning.filter((e) => {
+    return baseEvidenceLearning.filter((e) => {
       if (evidenceTypeFilter !== 'All' && e.logType !== evidenceTypeFilter) return false;
       if (selectedRegionFilter !== 'All') {
         const r = e.region || getRegionForEvidence(e);
@@ -723,7 +771,7 @@ export default function App() {
       }
       return true;
     });
-  }, [evidenceLearning, evidenceTypeFilter, selectedRegionFilter]);
+  }, [baseEvidenceLearning, evidenceTypeFilter, selectedRegionFilter]);
 
   // Tab Metadata helper for specific active styles
   const activeTabInfo = useMemo(() => {
@@ -1143,7 +1191,8 @@ export default function App() {
         region: '',
         category: '',
         urgency: '',
-        workingWithOaha: false
+        workingWithOaha: false,
+        place: selectedPlace
       });
       setTimeout(() => {
         setIsAddGapOpen(false);
@@ -1378,72 +1427,265 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
   return (
     <div className="flex flex-col min-h-screen bg-[#fbfbf9] font-sans antialiased text-[#1a2521]">
       
-      {/* HEADER */}
-      <header className="flex-none border-b border-[#e1e1db] bg-white px-6 py-5 relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Logo className="w-14 h-14" />
+      {/* GLOBAL HEADER */}
+      <header className="flex-none border-b border-[#e1e1db] bg-white relative z-10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div 
+            className="flex items-center gap-4 cursor-pointer"
+            onClick={() => {
+              setSelectedPlace(null);
+              setCurrentAlphaTab('overview');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            <Logo className="w-12 h-12" />
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-[#1a2521] tracking-tight">
-                Wales Employment Ecosystem Mapping
+                Community Impact Accelerator
               </h1>
               <p className="text-xs text-[#51615a] mt-0.5 max-w-2xl">
-                A dynamic shared digital environment validating insights, connecting priorities, tracking commitments, and logging outcomes.
+                A shared operating environment for place-based change
               </p>
             </div>
           </div>
 
-
+          {selectedPlace !== null && (
+            <button
+              onClick={() => {
+                setSelectedPlace(null);
+                setCurrentAlphaTab('overview');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-[#1a2521] rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Home</span>
+            </button>
+          )}
         </div>
       </header>
 
-      {/* FIVE ALPHA VIEW TABS SELECTOR */}
-      <nav className="flex-none bg-white border-b border-[#e1e1db] px-6 sticky top-0 z-20 overflow-x-auto scrollbar-hide">
-        <div className="max-w-7xl mx-auto flex gap-1 py-2">
-          <button onClick={() => setCurrentAlphaTab('overview')} className={`px-4 py-2 text-xs rounded-lg border transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeTabClass('overview')}`}>
-            <Activity className="w-4 h-4" />
-            <span>Place overview</span>
-          </button>
-          <button onClick={() => setCurrentAlphaTab('journey')} className={`px-4 py-2 text-xs rounded-lg border transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${currentAlphaTab === 'journey' || currentAlphaTab === 'gaps_offers' ? 'border-[#29B6BD] text-[#176e73] bg-[#29B6BD]/10 font-bold shadow-2xs' : 'border-transparent text-[#51615a] hover:text-[#1a2521] hover:bg-teal-50/50'}`}>
-            <Globe className="w-4 h-4" />
-            <span>Journey diagnostic, gaps & offers</span>
-          </button>
-          <button onClick={() => setCurrentAlphaTab('directory')} className={`px-4 py-2 text-xs rounded-lg border transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeTabClass('directory')}`}>
-            <MapPin className="w-4 h-4" />
-            <span>Organisation directory</span>
-          </button>
-          <button onClick={() => setCurrentAlphaTab('commitments')} className={`px-4 py-2 text-xs rounded-lg border transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeTabClass('commitments')}`}>
-            <ClipboardList className="w-4 h-4" />
-            <span>Commitment tracker</span>
-          </button>
-          <button onClick={() => setCurrentAlphaTab('evidence_learning')} className={`px-4 py-2 text-xs rounded-lg border transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeTabClass('evidence_learning')}`}>
-            <BookOpen className="w-4 h-4" />
-            <span>Evidence & learning log</span>
-          </button>
+      {/* SECOND-LEVEL PLACE NAVIGATION (ONLY APPEARS WHEN EXPLORE WALES OR EXPLORE YORKSHIRE IS CLICKED) */}
+      {selectedPlace !== null && (
+        <div className="bg-[#F4F4F0]/60 border-b border-[#e1e1db] px-6 py-2">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2 text-xs text-[#51615a]">
+              <span 
+                className="font-medium hover:text-[#1a2521] cursor-pointer" 
+                onClick={() => {
+                  setSelectedPlace(null);
+                  setCurrentAlphaTab('overview');
+                }}
+              >
+                Community Impact Accelerator
+              </span>
+              <span className="text-gray-400">/</span>
+              <span 
+                className="font-medium hover:text-[#1a2521] cursor-pointer" 
+                onClick={() => {
+                  setSelectedPlace(null);
+                  setCurrentAlphaTab('overview');
+                }}
+              >
+                Places
+              </span>
+              <span className="text-gray-400">/</span>
+              <span className="font-bold text-[#1a2521] capitalize">{selectedPlace}</span>
+            </div>
+
+            {/* Place local navigation tabs */}
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#176e73] bg-[#29B6BD]/10 px-2 py-0.5 rounded mr-1 capitalize">
+                {selectedPlace} navigation
+              </span>
+              <button 
+                onClick={() => setCurrentAlphaTab('overview')} 
+                className={`px-3 py-1 text-xs rounded-lg transition cursor-pointer whitespace-nowrap ${activeTabClass('overview')}`}
+              >
+                Overview
+              </button>
+              <button 
+                onClick={() => setCurrentAlphaTab('journey')} 
+                className={`px-3 py-1 text-xs rounded-lg transition cursor-pointer whitespace-nowrap ${currentAlphaTab === 'journey' ? 'border-[#29B6BD] text-[#176e73] bg-[#29B6BD]/10 font-bold' : 'border-transparent text-[#51615a] hover:text-[#1a2521]'}`}
+              >
+                Journey and Gaps
+              </button>
+              <button 
+                onClick={() => setCurrentAlphaTab('directory')} 
+                className={`px-3 py-1 text-xs rounded-lg transition cursor-pointer whitespace-nowrap ${activeTabClass('directory')}`}
+              >
+                Organisation Directory
+              </button>
+              <button 
+                onClick={() => setCurrentAlphaTab('commitments')} 
+                className={`px-3 py-1 text-xs rounded-lg transition cursor-pointer whitespace-nowrap ${activeTabClass('commitments')}`}
+              >
+                Commitments
+              </button>
+              <button 
+                onClick={() => setCurrentAlphaTab('evidence_learning')} 
+                className={`px-3 py-1 text-xs rounded-lg transition cursor-pointer whitespace-nowrap ${activeTabClass('evidence_learning')}`}
+              >
+                Evidence and Learning
+              </button>
+              <button 
+                onClick={handleOpenAddGap} 
+                className="px-3 py-1 text-xs rounded-lg border border-emerald-600 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition cursor-pointer font-bold whitespace-nowrap"
+              >
+                Contribute
+              </button>
+            </div>
+          </div>
         </div>
-      </nav>
+      )}
 
       {/* MAIN SWITCHBOARD CONTAINER */}
       <div className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 space-y-6">
 
-        {/* 1. PLACE OVERVIEW PANEL */}
-        {currentAlphaTab === 'overview' && (
+        {/* 1. PLACE SPECIFIC OVERVIEW (When Explore Wales or Explore Yorkshire is selected) */}
+        {selectedPlace !== null && currentAlphaTab === 'overview' && (
           <div className="space-y-6 animate-fadeIn">
-            
-            {/* Place Outcomes Summary */}
-            <div className="w-full bg-white rounded-2xl border border-[#e1e1db] p-6 space-y-4 shadow-xs">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-[#29B6BD]/10 rounded-lg text-[#176e73]">
-                  <Globe className="w-5 h-5" />
+            {/* Place Overview Card */}
+            <div className="w-full bg-white rounded-2xl border border-[#e1e1db] p-6 sm:p-8 space-y-5 shadow-xs">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[#e1e1db] pb-4">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#176e73] bg-[#29B6BD]/10 px-2.5 py-1 rounded">
+                    {selectedPlace === 'wales' ? 'National Ecosystem' : 'Regional Ecosystem'}
+                  </span>
+                  <h2 className="text-2xl font-extrabold text-[#1a2521] tracking-tight mt-1 capitalize">
+                    {selectedPlace} Overview
+                  </h2>
                 </div>
-                <h2 className="text-base font-bold text-[#1a2521]">Wales Use Case (Active Alpha)</h2>
+                <button
+                  onClick={() => setSelectedPlace(null)}
+                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-[#1a2521] text-xs font-semibold rounded-lg flex items-center gap-1 transition cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Return to Landing Page</span>
+                </button>
               </div>
-              
-              <p className="text-xs text-[#51615a] leading-relaxed">
-                The initial alpha focuses on <strong>Wales</strong>, mapping youth journeys from education into employment and future workforce opportunities. This dashboard serves as a controlled, working prototype co-designed with Welsh partners to test whether a shared platform can accelerate place-based mobilisation from <strong>Insight → Priority → Pilot → Learning</strong>.
+
+              {/* Introductory Paragraph */}
+              <p className="text-sm text-[#51615a] leading-relaxed border-b border-[#e1e1db]/60 pb-4">
+                {selectedPlace === 'wales' 
+                  ? 'In Wales, we have been working closely with over 20 key anchor organisations, colleges, local authorities, and community partners across all 22 regions to promote youth pathways and tackle systemic barriers. By pairing official ONS census indicators with live grassroots intelligence, our collaborative network maps real-time gaps in post-16 training, shift transport, and bilingual career advice. Together, we coordinate cross-sector pledges and place-based funding to ensure young people in the Valleys and rural areas thrive in high-value industries. Below is a snapshot of our active mapped footprint and joint commitments in Wales.'
+                  : 'In Yorkshire, we have been working closely with regional mayoral authorities, key anchor employers, colleges, and over 25 community organisations across South and West Yorkshire to promote skills, digital inclusion, and green careers. By identifying critical deficits in high-deprivation districts like Bradford, Rotherham, and Sheffield, our shared environment connects local youth directly with apprenticeship opportunities and transport solutions. We facilitate formal employer commitments and track impact through transparent regional learning logs. Below is a summary of our current mapped footprint and active pledges across Yorkshire.'
+                }
               </p>
 
-              <div className="border-t border-[#e1e1db] pt-4 space-y-3">
+              {/* Simple Information Metrics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-1">
+                <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
+                  <span className="text-xs font-bold text-[#51615a]">Mapped Initiatives</span>
+                  <p className="text-3xl font-extrabold text-[#29B6BD] mt-1">
+                    {selectedPlace === 'wales' ? 48 : 32}
+                  </p>
+                </div>
+                <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
+                  <span className="text-xs font-bold text-[#51615a]">Gaps & Offers</span>
+                  <p className="text-3xl font-extrabold text-[#3EB049] mt-1">
+                    {selectedPlace === 'wales' ? 144 : 88}
+                  </p>
+                </div>
+                <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
+                  <span className="text-xs font-bold text-[#51615a]">Agreed Commitments</span>
+                  <p className="text-3xl font-extrabold text-[#F89E1B] mt-1">
+                    {selectedPlace === 'wales' ? 10 : 6}
+                  </p>
+                </div>
+                <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
+                  <span className="text-xs font-bold text-[#51615a]">Evidence Logs</span>
+                  <p className="text-3xl font-extrabold text-[#888E8F] mt-1">
+                    {selectedPlace === 'wales' ? 4 : 3}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* ONS Census Household Deprivation Choropleth Map */}
+            <PlaceCensusMap placeName={selectedPlace === 'wales' ? 'Wales' : 'Yorkshire'} />
+
+            {/* Video with Quote */}
+            <PlaceShowcaseVideo placeName={selectedPlace === 'wales' ? 'Wales' : 'Yorkshire'} />
+          </div>
+        )}
+
+        {/* 2. MAIN LANDING PAGE OVERVIEW (When no place is selected) */}
+        {selectedPlace === null && currentAlphaTab === 'overview' && (
+          <div className="space-y-6 animate-fadeIn">
+            
+            {/* Hero Section */}
+            <div className="w-full bg-white rounded-2xl border border-[#e1e1db] p-6 sm:p-8 space-y-6 shadow-xs">
+              <div className="flex flex-col lg:flex-row items-stretch justify-between gap-6">
+                {/* Left Column: Title & Intro Copy */}
+                <div className="space-y-3 flex-1">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a2521] tracking-tight leading-tight">
+                    A shared operating environment for place-based change
+                  </h2>
+                  <div className="text-sm text-[#51615a] leading-relaxed space-y-3 pt-1">
+                    <p className="font-semibold text-[#1a2521]">
+                      Our ambition is to transform how we understand, coordinate and scale local impact.
+                    </p>
+                    <p>
+                      The Community Impact Accelerator brings together public data, community insight, organisations, shared priorities, commitments and evidence. It helps places see what is happening, identify what is missing and coordinate action and investment around the people and communities most at risk of being left behind.
+                    </p>
+                    <p>
+                      Starting with live place-based work in Wales and Yorkshire, we are testing how a shared digital environment can help communities, employers, education providers, funders and public bodies move from insight to priority, action and learning.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Column: 2 Click to Action Buttons + Contribute to mapping */}
+                <div className="w-full lg:w-72 xl:w-80 bg-[#F4F4F0]/80 rounded-xl border border-[#e1e1db] p-5 flex flex-col justify-center space-y-3 shrink-0 shadow-2xs">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#176e73]">
+                      Place-Based Work
+                    </span>
+                    <h3 className="text-sm font-bold text-[#1a2521]">Select a place to explore:</h3>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedPlace('wales');
+                      setCurrentAlphaTab('overview');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className={`w-full py-3 px-3.5 font-bold rounded-xl text-xs transition cursor-pointer flex items-center justify-between shadow-2xs group ${selectedPlace === 'wales' ? 'bg-[#176e73] text-white ring-2 ring-[#29B6BD]' : 'bg-[#176e73] hover:bg-[#12585c] text-white'}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[#29B6BD] shrink-0" />
+                      <span>Explore Wales Ecosystem</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform shrink-0" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSelectedPlace('yorkshire');
+                      setCurrentAlphaTab('overview');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className={`w-full py-3 px-3.5 font-bold rounded-xl text-xs transition cursor-pointer flex items-center justify-between shadow-2xs group ${selectedPlace === 'yorkshire' ? 'bg-[#29B6BD] text-white ring-2 ring-amber-300' : 'bg-[#29B6BD] hover:bg-[#209096] text-white'}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-amber-200 shrink-0" />
+                      <span>Explore Yorkshire Ecosystem</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform shrink-0" />
+                  </button>
+
+                  <button
+                    onClick={handleOpenAddGap}
+                    className="w-full py-2.5 px-3 text-xs font-semibold text-[#176e73] hover:text-[#1a2521] bg-white hover:bg-teal-50/80 rounded-xl border border-[#e1e1db] transition flex items-center justify-center gap-1.5 cursor-pointer shadow-3xs"
+                  >
+                    <PlusCircle className="w-4 h-4 text-[#3EB049]" />
+                    <span>Contribute to the mapping</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="border-t border-[#e1e1db] pt-5 space-y-3">
                 <h3 className="text-xs font-bold text-[#1a2521] uppercase tracking-wide">Target Priority Outcomes</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="p-3 bg-slate-50 rounded-xl border border-gray-100 flex items-start gap-3">
@@ -1486,6 +1728,687 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
               </div>
             </div>
 
+            {/* How the Accelerator Works Section */}
+            <div id="how-it-works-section" className="w-full bg-white rounded-2xl border border-[#e1e1db] p-6 sm:p-8 space-y-6 shadow-xs">
+              <div className="space-y-2">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-[#1a2521] tracking-tight">
+                  From fragmented activity to shared place-based action
+                </h3>
+                <p className="text-sm text-[#51615a]">
+                  The Accelerator connects three parts of place-based change that are often held in separate systems.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* 1. Understand the place */}
+                <div className="bg-[#F4F4F0]/50 rounded-xl border border-[#e1e1db] p-5 space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[#29B6BD] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+                        1
+                      </div>
+                      <h4 className="text-sm font-bold text-[#1a2521]">Understand the place</h4>
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Combine public data, community knowledge and information about existing organisations to understand:
+                    </p>
+                    <ul className="space-y-1.5 pt-1 text-xs text-[#1a2521]">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#29B6BD] font-bold">•</span>
+                        <span>local need and inequality</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#29B6BD] font-bold">•</span>
+                        <span>opportunity and economic context</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#29B6BD] font-bold">•</span>
+                        <span>current services and initiatives</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#29B6BD] font-bold">•</span>
+                        <span>underserved communities</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#29B6BD] font-bold">•</span>
+                        <span>possible gaps and duplication</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* 2. Coordinate action */}
+                <div className="bg-[#F4F4F0]/50 rounded-xl border border-[#e1e1db] p-5 space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[#1a2521] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+                        2
+                      </div>
+                      <h4 className="text-sm font-bold text-[#1a2521]">Coordinate action</h4>
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Help organisations work around shared priorities by making visible:
+                    </p>
+                    <ul className="space-y-1.5 pt-1 text-xs text-[#1a2521]">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#1a2521] font-bold">•</span>
+                        <span>projects and initiatives</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#1a2521] font-bold">•</span>
+                        <span>offers and requests</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#1a2521] font-bold">•</span>
+                        <span>commitments and owners</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#1a2521] font-bold">•</span>
+                        <span>opportunities for collaboration</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#1a2521] font-bold">•</span>
+                        <span>connections between community, education and employment</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* 3. Evidence and learn */}
+                <div className="bg-[#F4F4F0]/50 rounded-xl border border-[#e1e1db] p-5 space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[#3EB049] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+                        3
+                      </div>
+                      <h4 className="text-sm font-bold text-[#1a2521]">Evidence and learn</h4>
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Build a shared record of:
+                    </p>
+                    <ul className="space-y-1.5 pt-1 text-xs text-[#1a2521]">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#3EB049] font-bold">•</span>
+                        <span>what has been delivered</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#3EB049] font-bold">•</span>
+                        <span>who contributed</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#3EB049] font-bold">•</span>
+                        <span>emerging outcomes</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#3EB049] font-bold">•</span>
+                        <span>lived-experience insight</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#3EB049] font-bold">•</span>
+                        <span>lessons that can strengthen future delivery and investment</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* What would you like to explore? (Task-based Entry Cards) */}
+            <div className="w-full bg-white rounded-2xl border border-[#e1e1db] p-6 sm:p-8 space-y-6 shadow-xs">
+              <div className="space-y-1.5">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-[#1a2521] tracking-tight">
+                  What would you like to explore?
+                </h3>
+                <p className="text-xs text-[#51615a]">
+                  Choose a task to dive into local insights, place-based work, organisations, and community action.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-5">
+                {/* Card 1: Explore the journey to opportunity */}
+                <div className="bg-[#F4F4F0]/40 hover:bg-[#F4F4F0] transition border border-[#e1e1db] rounded-xl p-5 space-y-4 flex flex-col justify-between group">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-[#29B6BD]/10 text-[#176e73] rounded-lg">
+                        <Globe className="w-5 h-5" />
+                      </div>
+                      <h4 className="text-sm font-bold text-[#1a2521] group-hover:text-[#176e73] transition">
+                        Explore the journey to opportunity
+                      </h4>
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      See how family, community, education, training, employment and re-entry shape a person’s pathway—and where support exists at each point.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setPlacePromptTarget('journey')}
+                    className="w-full py-2.5 bg-[#29B6BD] hover:bg-[#1d8e93] text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
+                  >
+                    <span>Explore the journey</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Card 2: Find organisations and support */}
+                <div className="bg-[#F4F4F0]/40 hover:bg-[#F4F4F0] transition border border-[#e1e1db] rounded-xl p-5 space-y-4 flex flex-col justify-between group">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-[#29B6BD]/10 text-[#176e73] rounded-lg">
+                        <Search className="w-5 h-5" />
+                      </div>
+                      <h4 className="text-sm font-bold text-[#1a2521] group-hover:text-[#176e73] transition">
+                        Find organisations and support
+                      </h4>
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Search mapped organisations by place, journey stage, population group and type of support.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setPlacePromptTarget('directory')}
+                    className="w-full py-2.5 bg-[#29B6BD] hover:bg-[#1d8e93] text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
+                  >
+                    <span>Search the ecosystem</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Card 3: Contribute to the ecosystem */}
+                <div className="bg-[#F4F4F0]/40 hover:bg-[#F4F4F0] transition border border-[#e1e1db] rounded-xl p-5 space-y-4 flex flex-col justify-between group">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-emerald-500/10 text-emerald-700 rounded-lg">
+                        <PlusCircle className="w-5 h-5" />
+                      </div>
+                      <h4 className="text-sm font-bold text-[#1a2521] group-hover:text-emerald-800 transition">
+                        Contribute to the ecosystem
+                      </h4>
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Add or update an organisation, share an offer or request, make a commitment, or contribute evidence and learning.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleOpenAddGap}
+                    className="w-full py-2.5 bg-[#3EB049] hover:bg-[#32923c] text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
+                  >
+                    <span>Contribute information</span>
+                    <PlusCircle className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Card 4: See commitments and learning */}
+                <div className="bg-[#F4F4F0]/40 hover:bg-[#F4F4F0] transition border border-[#e1e1db] rounded-xl p-5 space-y-4 flex flex-col justify-between group">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-purple-500/10 text-purple-700 rounded-lg">
+                        <ClipboardList className="w-5 h-5" />
+                      </div>
+                      <h4 className="text-sm font-bold text-[#1a2521] group-hover:text-purple-800 transition">
+                        See commitments and learning
+                      </h4>
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Understand what partners have committed to do, what is being tested and what the work is teaching us.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setPlacePromptTarget('commitments')}
+                    className="w-full py-2.5 bg-[#1a2521] hover:bg-[#2c3d37] text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
+                  >
+                    <span>View action and learning</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 5: PLACES SECTION - SUBSTANTIAL WALES & YORKSHIRE PLACE CARDS */}
+            <div id="places-section" className="w-full bg-white rounded-2xl border border-[#e1e1db] p-6 sm:p-8 space-y-6 shadow-xs">
+              <div className="space-y-2 max-w-3xl">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-[#1a2521] tracking-tight">
+                  Tested through real place-based work
+                </h3>
+                <p className="text-sm text-[#51615a] leading-relaxed">
+                  The Accelerator is being developed through live work rather than as a standalone technology exercise. Each place helps us test what information is useful, how different organisations collaborate and what is required to turn shared insight into practical action.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* WALES PLACE CARD */}
+                <div className="bg-[#F4F4F0]/50 hover:bg-[#F4F4F0] transition border border-[#e1e1db] rounded-2xl p-6 flex flex-col justify-between space-y-5">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3 border-b border-[#e1e1db] pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-[#29B6BD]/10 text-[#176e73] rounded-xl">
+                          <MapPin className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-[#1a2521]">Wales</h4>
+                          <span className="text-xs text-[#51615a]">National Ecosystem Mapping</span>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[10px] uppercase tracking-wider rounded-full">
+                        Active alpha
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Mapping the journey from home and community through education, employment, progression and re-entry, alongside local need, opportunity and workforce priorities.
+                    </p>
+
+                    <div className="bg-white rounded-xl p-4 border border-[#e1e1db] space-y-2.5 text-xs">
+                      <div className="flex items-center justify-between py-1 border-b border-gray-100">
+                        <span className="text-[#51615a] font-medium">Status:</span>
+                        <span className="font-bold text-[#176e73]">Active alpha</span>
+                      </div>
+                      <div className="flex items-center justify-between py-1 border-b border-gray-100">
+                        <span className="text-[#51615a] font-medium">Current focus:</span>
+                        <span className="font-semibold text-[#1a2521]">Youth journeys into employment</span>
+                      </div>
+                      <div className="flex items-center justify-between py-1 border-b border-gray-100">
+                        <span className="text-[#51615a] font-medium">Organisations mapped:</span>
+                        <span className="font-bold text-[#3EB049]">142+ mapped</span>
+                      </div>
+                      <div className="flex items-start justify-between py-1">
+                        <span className="text-[#51615a] font-medium">Current priorities:</span>
+                        <span className="font-semibold text-[#1a2521] text-right max-w-[200px]">
+                          NEET reduction, Green Pathways, Welsh Language
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedPlace('wales');
+                      setCurrentAlphaTab('overview');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="w-full py-3 bg-[#1a2521] hover:bg-[#2c3d37] text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
+                  >
+                    <span>Explore Wales overview</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* YORKSHIRE PLACE CARD */}
+                <div className="bg-[#F4F4F0]/50 hover:bg-[#F4F4F0] transition border border-[#e1e1db] rounded-2xl p-6 flex flex-col justify-between space-y-5">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3 border-b border-[#e1e1db] pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-amber-500/10 text-amber-700 rounded-xl">
+                          <MapPin className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-[#1a2521]">Yorkshire</h4>
+                          <span className="text-xs text-[#51615a]">Regional Ecosystem Mapping</span>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[10px] uppercase tracking-wider rounded-full">
+                        Mapping in progress
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Applying the same approach across a different regional ecosystem to identify provision, gaps and connections across education, enterprise and employment.
+                    </p>
+
+                    <div className="bg-white rounded-xl p-4 border border-[#e1e1db] space-y-2.5 text-xs">
+                      <div className="flex items-center justify-between py-1 border-b border-gray-100">
+                        <span className="text-[#51615a] font-medium">Status:</span>
+                        <span className="font-bold text-amber-800">Mapping in progress</span>
+                      </div>
+                      <div className="flex items-center justify-between py-1 border-b border-gray-100">
+                        <span className="text-[#51615a] font-medium">Current geography:</span>
+                        <span className="font-semibold text-[#1a2521]">South & West Yorkshire</span>
+                      </div>
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-[#51615a] font-medium">Current mapping stage:</span>
+                        <span className="font-semibold text-[#1a2521]">Phase 1: Needs Diagnostic & Mapping</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedPlace('yorkshire');
+                      setCurrentAlphaTab('overview');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
+                  >
+                    <span>Explore Yorkshire overview</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Who the platform is for Section */}
+            <div className="w-full bg-white rounded-2xl border border-[#e1e1db] p-6 sm:p-8 space-y-6 shadow-xs">
+              <div className="space-y-1.5">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-[#1a2521] tracking-tight">
+                  Designed for everyone contributing to place-based change
+                </h3>
+                <p className="text-xs text-[#51615a]">
+                  Click on any card to explore what different partners and community members can do on the platform.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {/* 1. Community organisations and charities */}
+                <div 
+                  onClick={() => setExpandedAudienceCard(expandedAudienceCard === 'community' ? null : 'community')}
+                  className={`border rounded-xl p-5 space-y-4 flex flex-col justify-between transition cursor-pointer ${
+                    expandedAudienceCard === 'community' 
+                      ? 'bg-[#F4F4F0] border-[#176e73] shadow-xs' 
+                      : 'bg-[#F4F4F0]/40 hover:bg-[#F4F4F0] border-[#e1e1db]'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-[#29B6BD]/10 text-[#176e73] rounded-lg">
+                          <Building2 className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-sm font-bold text-[#1a2521]">
+                          Community organisations and charities
+                        </h4>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 text-[#51615a] transition-transform ${expandedAudienceCard === 'community' ? 'rotate-180 text-[#176e73]' : ''}`} />
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Increase the visibility of your work, understand the wider ecosystem, identify potential partners and communicate what your community needs.
+                    </p>
+                  </div>
+
+                  {expandedAudienceCard === 'community' && (
+                    <div className="pt-3 border-t border-[#e1e1db] space-y-2 animate-fadeIn">
+                      <span className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider">Actions:</span>
+                      <ul className="space-y-1.5 text-xs text-[#1a2521]">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>add or update an organisation</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>find related services</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>share an offer or request</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>contribute local insight</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>see where provision may be missing</span>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Schools, colleges and training providers */}
+                <div 
+                  onClick={() => setExpandedAudienceCard(expandedAudienceCard === 'education' ? null : 'education')}
+                  className={`border rounded-xl p-5 space-y-4 flex flex-col justify-between transition cursor-pointer ${
+                    expandedAudienceCard === 'education' 
+                      ? 'bg-[#F4F4F0] border-[#176e73] shadow-xs' 
+                      : 'bg-[#F4F4F0]/40 hover:bg-[#F4F4F0] border-[#e1e1db]'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-[#29B6BD]/10 text-[#176e73] rounded-lg">
+                          <BookOpen className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-sm font-bold text-[#1a2521]">
+                          Schools, colleges and training providers
+                        </h4>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 text-[#51615a] transition-transform ${expandedAudienceCard === 'education' ? 'rotate-180 text-[#176e73]' : ''}`} />
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Understand the wider support available to learners and build stronger connections between education, community and employment.
+                    </p>
+                  </div>
+
+                  {expandedAudienceCard === 'education' && (
+                    <div className="pt-3 border-t border-[#e1e1db] space-y-2 animate-fadeIn">
+                      <span className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider">Actions:</span>
+                      <ul className="space-y-1.5 text-xs text-[#1a2521]">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>find referral and delivery partners</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>see support across journey stages</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>identify employer offers</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>share pathway or transition needs</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>contribute evidence</span>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Employers and anchor institutions */}
+                <div 
+                  onClick={() => setExpandedAudienceCard(expandedAudienceCard === 'employers' ? null : 'employers')}
+                  className={`border rounded-xl p-5 space-y-4 flex flex-col justify-between transition cursor-pointer ${
+                    expandedAudienceCard === 'employers' 
+                      ? 'bg-[#F4F4F0] border-[#176e73] shadow-xs' 
+                      : 'bg-[#F4F4F0]/40 hover:bg-[#F4F4F0] border-[#e1e1db]'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-[#29B6BD]/10 text-[#176e73] rounded-lg">
+                          <Briefcase className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-sm font-bold text-[#1a2521]">
+                          Employers and anchor institutions
+                        </h4>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 text-[#51615a] transition-transform ${expandedAudienceCard === 'employers' ? 'rotate-180 text-[#176e73]' : ''}`} />
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Connect workforce opportunities and social-impact activity with the communities, schools and organisations that can help make those opportunities accessible.
+                    </p>
+                  </div>
+
+                  {expandedAudienceCard === 'employers' && (
+                    <div className="pt-3 border-t border-[#e1e1db] space-y-2 animate-fadeIn">
+                      <span className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider">Actions:</span>
+                      <ul className="space-y-1.5 text-xs text-[#1a2521]">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>understand local need and opportunity</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>post an offer</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>identify potential delivery partners</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>make a commitment</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>connect future skills demand to local pathways</span>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Funders and commissioners */}
+                <div 
+                  onClick={() => setExpandedAudienceCard(expandedAudienceCard === 'funders' ? null : 'funders')}
+                  className={`border rounded-xl p-5 space-y-4 flex flex-col justify-between transition cursor-pointer ${
+                    expandedAudienceCard === 'funders' 
+                      ? 'bg-[#F4F4F0] border-[#176e73] shadow-xs' 
+                      : 'bg-[#F4F4F0]/40 hover:bg-[#F4F4F0] border-[#e1e1db]'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-[#29B6BD]/10 text-[#176e73] rounded-lg">
+                          <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-sm font-bold text-[#1a2521]">
+                          Funders and commissioners
+                        </h4>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 text-[#51615a] transition-transform ${expandedAudienceCard === 'funders' ? 'rotate-180 text-[#176e73]' : ''}`} />
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      See local need alongside existing provision, identify potential gaps and make better-informed decisions about investment and commissioning.
+                    </p>
+                  </div>
+
+                  {expandedAudienceCard === 'funders' && (
+                    <div className="pt-3 border-t border-[#e1e1db] space-y-2 animate-fadeIn">
+                      <span className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider">Actions:</span>
+                      <ul className="space-y-1.5 text-xs text-[#1a2521]">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>explore deprivation and opportunity data</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>review mapped provision</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>identify collaboration opportunities</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>follow commitments and outcomes</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>understand where further investment may add value</span>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Government and place leaders */}
+                <div 
+                  onClick={() => setExpandedAudienceCard(expandedAudienceCard === 'government' ? null : 'government')}
+                  className={`border rounded-xl p-5 space-y-4 flex flex-col justify-between transition cursor-pointer ${
+                    expandedAudienceCard === 'government' 
+                      ? 'bg-[#F4F4F0] border-[#176e73] shadow-xs' 
+                      : 'bg-[#F4F4F0]/40 hover:bg-[#F4F4F0] border-[#e1e1db]'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-[#29B6BD]/10 text-[#176e73] rounded-lg">
+                          <Globe className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-sm font-bold text-[#1a2521]">
+                          Government and place leaders
+                        </h4>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 text-[#51615a] transition-transform ${expandedAudienceCard === 'government' ? 'rotate-180 text-[#176e73]' : ''}`} />
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Build a shared view of the place, align partners around priorities and understand how activity is contributing to longer-term change.
+                    </p>
+                  </div>
+
+                  {expandedAudienceCard === 'government' && (
+                    <div className="pt-3 border-t border-[#e1e1db] space-y-2 animate-fadeIn">
+                      <span className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider">Actions:</span>
+                      <ul className="space-y-1.5 text-xs text-[#1a2521]">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>review the whole ecosystem</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>compare data and provision</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>identify weak connections</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>track shared priorities</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#29B6BD] shrink-0 mt-0.5" />
+                          <span>access evidence and learning</span>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* 6. Young people, families and communities */}
+                <div 
+                  onClick={() => setExpandedAudienceCard(expandedAudienceCard === 'communities' ? null : 'communities')}
+                  className={`border rounded-xl p-5 space-y-4 flex flex-col justify-between transition cursor-pointer ${
+                    expandedAudienceCard === 'communities' 
+                      ? 'bg-[#F4F4F0] border-[#176e73] shadow-xs' 
+                      : 'bg-[#F4F4F0]/40 hover:bg-[#F4F4F0] border-[#e1e1db]'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-[#29B6BD]/10 text-[#176e73] rounded-lg">
+                          <Users className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-sm font-bold text-[#1a2521]">
+                          Young people, families and communities
+                        </h4>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 text-[#51615a] transition-transform ${expandedAudienceCard === 'communities' ? 'rotate-180 text-[#176e73]' : ''}`} />
+                    </div>
+                    <p className="text-xs text-[#51615a] leading-relaxed">
+                      Explore how opportunities and support connect across the journey, and see how community experience is shaping priorities and solutions.
+                    </p>
+                  </div>
+
+                  {expandedAudienceCard === 'communities' && (
+                    <div className="pt-3 border-t border-[#e1e1db] space-y-2 animate-fadeIn">
+                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900 leading-normal">
+                        <strong>Note on usage:</strong> This platform maps ecosystem connections and shared intelligence. Until service data is regularly validated, it is not a direct personal service referral directory.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Live Ecosystem Health Board */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
@@ -1516,6 +2439,17 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
 
             {/* Place Showcase Video (UN Global Compact & Welsh Partners Co-design Workshop) - At bottom of overview */}
             <PlaceShowcaseVideo />
+
+            {/* SECTION 10: ACTIVE ALPHA & DATA-COVERAGE STATEMENT */}
+            <div className="w-full bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 sm:p-4 flex items-start gap-3 text-amber-900 shadow-3xs">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-xs space-y-0.5">
+                <span className="font-bold uppercase tracking-wider text-[10px] text-amber-800 block">Active Alpha Notice</span>
+                <p className="text-[#51615a] leading-relaxed">
+                  This is an active alpha platform being developed and tested with place-based partners. Information reflects mapped and validated data to date and continues to grow as organisations contribute.
+                </p>
+              </div>
+            </div>
 
             {/* Dynamic Alpha Setup Assistant (Help user set up Supabase) */}
             {!dbStatus.connected && (
@@ -1712,6 +2646,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
               gapUrgencyFilter={gapUrgencyFilter}
               onGapUrgencyFilterChange={setGapUrgencyFilter}
               onOpenAddGap={handleOpenAddGap}
+              placeName={selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'}
             />
 
             {/* DATA INTERPRETATION NOTE */}
@@ -1732,11 +2667,11 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     </h3>
                   </div>
                   <h4 className="text-base font-bold text-[#1a2521] leading-snug">
-                    {activeTab === 'All' ? 'All Pathway Stages across Wales' : activeTabInfo.label}
+                    {activeTab === 'All' ? `All Pathway Stages across ${selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'}` : activeTabInfo.label}
                   </h4>
                   <p className="text-[11px] text-[#51615a] leading-relaxed">
                     {activeTab === 'All' 
-                      ? 'Aggregated ecosystem metrics across the entire young person transition journey in Wales.' 
+                      ? `Aggregated ecosystem metrics across the entire young person transition journey in ${selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'}.` 
                       : activeTabInfo.description}
                   </p>
                 </div>
@@ -2116,7 +3051,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   {/* Badge */}
                   <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#e1e1db] shadow-xs text-[11px] flex items-center gap-2 text-[#1a2521]">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: activeColorHex }}></span>
-                    <span>Plotting <strong>{filteredOrganizations.length}</strong> pins in Wales</span>
+                    <span>Plotting <strong>{filteredOrganizations.length}</strong> pins in {selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'}</span>
                   </div>
 
                   <div className="absolute top-3 right-3 z-[1000] hidden sm:flex items-center gap-2">
@@ -2132,7 +3067,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                       <div className="max-w-sm">
                         <HelpCircle className="w-10 h-10 text-[#51615a] mx-auto mb-2" />
                         <h3 className="text-sm font-semibold text-[#1a2521]">No stage pins plotted</h3>
-                        <p className="text-xs text-[#51615a]">Adjust filters or register an initiative to plot markers on this section of Wales.</p>
+                        <p className="text-xs text-[#51615a]">Adjust filters or register an initiative to plot markers on this section of {selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'}.</p>
                       </div>
                     </div>
                   )}
@@ -2141,11 +3076,11 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 {/* Direct Connect CTA */}
                 <div className="bg-gradient-to-br from-[#29B6BD]/5 to-[#29B6BD]/15 border border-[#29B6BD]/20 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="space-y-1 text-center sm:text-left">
-                    <h4 className="text-xs font-bold text-[#1a2521]">Want to scale your impact with Wales Ecosystem?</h4>
+                    <h4 className="text-xs font-bold text-[#1a2521]">Want to scale your impact with {selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'} Ecosystem?</h4>
                     <p className="text-[11px] text-[#51615a]">Partner with the OAHA Ecosystem Team to unify local workforce pathways.</p>
                   </div>
                   <button 
-                    onClick={() => handleOpenContact({ id: 'org-oaha', name: 'OAHA Wales Team' } as any, 'Hello! We want to apply as local partners.')}
+                    onClick={() => handleOpenContact({ id: 'org-oaha', name: selectedPlace === 'yorkshire' ? 'OAHA Yorkshire Team' : 'OAHA Wales Team' } as any, 'Hello! We want to apply as local partners.')}
                     className="px-4 py-1.5 bg-[#29B6BD] hover:bg-[#1d8e93] text-white rounded-lg text-xs font-semibold cursor-pointer whitespace-nowrap transition"
                   >
                     Partner with OAHA
@@ -2257,7 +3192,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
             </div>
 
             {/* Bottom Asymmetric Photo Grid (OD-1, OD-2, OD-3...) */}
-            <OrganisationPhotoGrid />
+            <OrganisationPhotoGrid placeName={selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'} />
 
           </div>
         </div>
@@ -2277,7 +3212,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 {selectedRegionFilter !== 'All' && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200 shadow-3xs animate-fadeIn">
                     <Filter className="w-3.5 h-3.5 text-amber-700 animate-pulse" />
-                    <span>Region: {selectedRegionFilter.charAt(0).toUpperCase() + selectedRegionFilter.slice(1)} Wales</span>
+                    <span>Region: {selectedRegionFilter.charAt(0).toUpperCase() + selectedRegionFilter.slice(1)} {selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'}</span>
                     <button 
                       onClick={() => setSelectedRegionFilter('All')} 
                       className="hover:text-rose-600 transition p-0.5 cursor-pointer ml-1"
@@ -2389,7 +3324,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 {selectedRegionFilter !== 'All' && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200 shadow-3xs animate-fadeIn">
                     <Filter className="w-3.5 h-3.5 text-amber-700 animate-pulse" />
-                    <span>Region: {selectedRegionFilter.charAt(0).toUpperCase() + selectedRegionFilter.slice(1)} Wales</span>
+                    <span>Region: {selectedRegionFilter.charAt(0).toUpperCase() + selectedRegionFilter.slice(1)} {selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'}</span>
                     <button 
                       onClick={() => setSelectedRegionFilter('All')} 
                       className="hover:text-rose-600 transition p-0.5 cursor-pointer ml-1"
@@ -2487,7 +3422,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
 
               {/* Right 1/3 Column: Project Showcase Carousel (Top photo + Quote + Blurred arrow controls) */}
               <div className="lg:col-span-4 sticky top-6">
-                <ProjectShowcaseCarousel />
+                <ProjectShowcaseCarousel placeName={selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'} />
               </div>
 
             </div>
@@ -2507,8 +3442,8 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
           <div className="bg-white rounded-3xl border border-[#e1e1db] w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 animate-scaleIn text-left">
             <div className="flex items-center justify-between pb-4 border-b border-[#e1e1db]">
               <div>
-                <h3 className="text-base font-bold text-[#1a2521]">Map New Welsh Initiative</h3>
-                <p className="text-[11px] text-[#51615a] mt-0.5">Place your organisation directly into the Welsh journey pathway.</p>
+                <h3 className="text-base font-bold text-[#1a2521]">Map New {selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Welsh'} Initiative</h3>
+                <p className="text-[11px] text-[#51615a] mt-0.5">Place your organisation directly into the {selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Welsh'} journey pathway.</p>
               </div>
               <button onClick={() => setIsAddOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 transition cursor-pointer">
                 <X className="w-5 h-5 text-[#51615a]" />
@@ -2527,7 +3462,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     name="name"
                     value={formData.name}
                     onChange={handleFormChange}
-                    placeholder="e.g. South Wales Coding Guild"
+                    placeholder={selectedPlace === 'yorkshire' ? 'e.g. West Yorkshire Tech Guild' : 'e.g. South Wales Coding Guild'}
                     className="w-full mt-1 px-3 py-2 border border-[#e1e1db] rounded-xl focus:outline-none focus:border-[#29B6BD]"
                   />
                 </div>
@@ -2550,19 +3485,34 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-[#51615a] uppercase">Welsh Hub Region</label>
+                  <label className="block text-[11px] font-bold text-[#51615a] uppercase">{selectedPlace === 'yorkshire' ? 'Yorkshire Hub Region' : 'Welsh Hub Region'}</label>
                   <select
                     name="locationRegion"
                     value={formData.locationRegion}
                     onChange={handleFormChange}
                     className="w-full mt-1 px-3 py-2 border border-[#e1e1db] rounded-xl focus:outline-none focus:border-[#29B6BD] bg-white"
                   >
-                    <option value="Cardiff">Cardiff (Capital Region)</option>
-                    <option value="Swansea">Swansea (South West)</option>
-                    <option value="Newport">Newport (Southeast)</option>
-                    <option value="Wrexham">Wrexham (Northeast)</option>
-                    <option value="Bangor">Bangor (Northwest)</option>
-                    <option value="Valleys">Valleys (Central Uplands)</option>
+                    {selectedPlace === 'yorkshire' ? (
+                      <>
+                        <option value="Bradford">Bradford (West Yorkshire)</option>
+                        <option value="Leeds">Leeds (West Yorkshire)</option>
+                        <option value="Sheffield">Sheffield (South Yorkshire)</option>
+                        <option value="Rotherham">Rotherham (South Yorkshire)</option>
+                        <option value="Doncaster">Doncaster (South Yorkshire)</option>
+                        <option value="Kirklees">Kirklees (Huddersfield)</option>
+                        <option value="Barnsley">Barnsley (South Yorkshire)</option>
+                        <option value="Wakefield">Wakefield (West Yorkshire)</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Cardiff">Cardiff (Capital Region)</option>
+                        <option value="Swansea">Swansea (South West)</option>
+                        <option value="Newport">Newport (Southeast)</option>
+                        <option value="Wrexham">Wrexham (Northeast)</option>
+                        <option value="Bangor">Bangor (Northwest)</option>
+                        <option value="Valleys">Valleys (Central Uplands)</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -2573,7 +3523,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     name="customLocationName"
                     value={formData.customLocationName}
                     onChange={handleFormChange}
-                    placeholder="e.g. Aberdare"
+                    placeholder={selectedPlace === 'yorkshire' ? 'e.g. Manningham' : 'e.g. Aberdare'}
                     className="w-full mt-1 px-3 py-2 border border-[#e1e1db] rounded-xl focus:outline-none focus:border-[#29B6BD]"
                   />
                 </div>
@@ -2586,13 +3536,13 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   rows={2}
                   value={formData.description}
                   onChange={handleFormChange}
-                  placeholder="What is your organisation's general objective in Wales?"
+                  placeholder={`What is your organisation's general objective in ${selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'}?`}
                   className="w-full mt-1 px-3 py-2 border border-[#e1e1db] rounded-xl focus:outline-none focus:border-[#29B6BD]"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#51615a] uppercase">Current Active Welsh Initiative *</label>
+                <label className="block text-[11px] font-bold text-[#51615a] uppercase">Current Active {selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Welsh'} Initiative *</label>
                 <input
                   type="text"
                   name="currentProject"
@@ -2736,6 +3686,43 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 </div>
               </div>
 
+              {/* Ecosystem Selection Box: Wales or Yorkshire */}
+              <div>
+                <label className="block text-[11px] font-bold text-[#51615a] uppercase">Ecosystem Location *</label>
+                <div className="grid grid-cols-2 gap-3 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGapForm(p => ({ ...p, place: 'wales' }));
+                      setSelectedPlace('wales');
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                      (gapForm.place || selectedPlace) === 'wales'
+                        ? 'bg-[#176e73] text-white border-[#176e73] shadow-2xs'
+                        : 'bg-gray-50 text-[#51615a] border-[#e1e1db] hover:bg-gray-100'
+                    }`}
+                  >
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>Wales</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGapForm(p => ({ ...p, place: 'yorkshire' }));
+                      setSelectedPlace('yorkshire');
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                      (gapForm.place || selectedPlace) === 'yorkshire'
+                        ? 'bg-[#29B6BD] text-white border-[#29B6BD] shadow-2xs'
+                        : 'bg-gray-50 text-[#51615a] border-[#e1e1db] hover:bg-gray-100'
+                    }`}
+                  >
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>Yorkshire</span>
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-bold text-[#51615a] uppercase"> Descriptive Title *</label>
                 <input
@@ -2765,11 +3752,23 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   onChange={(e) => setGapForm(p => ({ ...p, region: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 border border-[#e1e1db] bg-white rounded-xl focus:outline-none"
                 >
-                  <option value="">Auto-Detect from Text / General Wales</option>
-                  <option value="north">North Wales</option>
-                  <option value="mid">Mid Wales</option>
-                  <option value="southwest">South West Wales</option>
-                  <option value="southeast">South East Wales</option>
+                  {selectedPlace === 'yorkshire' ? (
+                    <>
+                      <option value="">Auto-Detect from Text / General Yorkshire</option>
+                      <option value="west">West Yorkshire (Bradford, Leeds, Kirklees, Wakefield)</option>
+                      <option value="south">South Yorkshire (Sheffield, Rotherham, Doncaster, Barnsley)</option>
+                      <option value="north">North Yorkshire</option>
+                      <option value="easthull">East Yorkshire & Hull</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="">Auto-Detect from Text / General Wales</option>
+                      <option value="north">North Wales</option>
+                      <option value="mid">Mid Wales</option>
+                      <option value="southwest">South West Wales</option>
+                      <option value="southeast">South East Wales</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -3899,6 +4898,177 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 className="flex-1 py-2.5 bg-[#29B6BD] hover:bg-[#1d8e93] text-white font-bold rounded-xl text-xs transition cursor-pointer text-center"
               >
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* YORKSHIRE OVERVIEW MODAL */}
+      {showYorkshireOverview && (
+        <div className="fixed inset-0 bg-[#1a2521]/45 backdrop-blur-xs flex items-center justify-center p-4 z-[9999]">
+          <div className="bg-white rounded-3xl border border-[#e1e1db] w-full max-w-2xl shadow-2xl p-6 animate-scaleIn text-left flex flex-col max-h-[90vh]">
+            <div className="flex items-start justify-between pb-4 border-b border-[#e1e1db]">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  Mapping in progress
+                </span>
+                <h3 className="text-lg font-bold text-[#1a2521] mt-1">Yorkshire Place-Based Accelerator</h3>
+              </div>
+              <button
+                onClick={() => setShowYorkshireOverview(false)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer text-[#51615a]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-5 space-y-5 text-xs text-[#51615a] leading-relaxed">
+              <div className="bg-amber-50/60 rounded-xl p-4 border border-amber-200/70 space-y-2">
+                <h4 className="font-bold text-[#1a2521] text-sm">What is happening?</h4>
+                <p>
+                  We are testing how a shared digital environment can help communities, employers, education providers, funders and public bodies across Yorkshire move from insight to priority, action and learning.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-[#1a2521] text-sm">Geography covered</h4>
+                <p>
+                  Initial focus includes key anchor communities across South Yorkshire and West Yorkshire, mapping youth journeys from education into employment and local growth sectors.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-[#1a2521] text-sm">Stage of the work</h4>
+                <p>
+                  <strong>Phase 1: Ecosystem Mapping & Needs Diagnostic</strong>. Regional partners are currently mapping local providers, identifying service friction points, and gathering lived-experience insight.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-[#1a2521] text-sm">Current evidence & mapped organisations</h4>
+                <p>
+                  Early mapping has catalogued key anchor organisations, training hubs, and community partners across Yorkshire. Full interactive dashboard integration is underway.
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-[#e1e1db]">
+                <h4 className="font-bold text-[#1a2521] text-sm">How you can contribute</h4>
+                <p>
+                  Are you operating or funding programmes in Yorkshire? You can share local intelligence, list your organisation, or submit offers and requests to support local young people.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#e1e1db] flex flex-wrap gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setShowYorkshireOverview(false);
+                  handleOpenAddGap();
+                }}
+                className="px-4 py-2.5 bg-[#3EB049] hover:bg-[#32923c] text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Contribute to Yorkshire Mapping</span>
+              </button>
+              <button
+                onClick={() => setShowYorkshireOverview(false)}
+                className="px-4 py-2.5 border border-[#e1e1db] text-[#51615a] font-semibold rounded-xl text-xs transition cursor-pointer"
+              >
+                Close Overview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REGION SELECTION MODAL (When clicking tasks on Home page) */}
+      {placePromptTarget !== null && (
+        <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl border border-[#e1e1db] w-full max-w-md shadow-2xl p-6 sm:p-7 space-y-5 animate-scaleIn text-left">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e1e1db]">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-[#29B6BD]/10 text-[#176e73] rounded-xl">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#1a2521]">Select Region</h3>
+                  <p className="text-[11px] text-[#51615a]">Which ecosystem would you like to explore?</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setPlacePromptTarget(null)} 
+                className="p-1 rounded-lg hover:bg-gray-100 text-[#51615a] transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#51615a] leading-relaxed">
+              Please choose a regional ecosystem to view relevant mapped initiatives, journey stages, and local priorities:
+            </p>
+
+            <div className="space-y-3 pt-1">
+              <button
+                onClick={() => {
+                  const target = placePromptTarget;
+                  setPlacePromptTarget(null);
+                  setSelectedPlace('wales');
+                  if (target === 'contribute') {
+                    handleOpenAddGap();
+                  } else if (target) {
+                    setCurrentAlphaTab(target);
+                  }
+                  window.scrollTo(0, 0);
+                  document.documentElement.scrollTop = 0;
+                  document.body.scrollTop = 0;
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
+                  }, 30);
+                }}
+                className="w-full p-4 bg-[#F4F4F0] hover:bg-teal-50/70 border border-[#e1e1db] hover:border-[#29B6BD] rounded-2xl text-left transition cursor-pointer flex items-center justify-between group shadow-3xs"
+              >
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-[#1a2521] group-hover:text-[#176e73]">Explore Wales Ecosystem</span>
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">Active alpha</span>
+                  </div>
+                  <p className="text-[11px] text-[#51615a]">National mapping across all 22 Welsh local authorities</p>
+                </div>
+                <ArrowRight className="w-5 h-5 text-[#29B6BD] group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
+              </button>
+
+              <button
+                onClick={() => {
+                  const target = placePromptTarget;
+                  setPlacePromptTarget(null);
+                  setSelectedPlace('yorkshire');
+                  if (target === 'contribute') {
+                    handleOpenAddGap();
+                  } else if (target) {
+                    setCurrentAlphaTab(target);
+                  }
+                  window.scrollTo(0, 0);
+                  document.documentElement.scrollTop = 0;
+                  document.body.scrollTop = 0;
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
+                  }, 30);
+                }}
+                className="w-full p-4 bg-[#F4F4F0] hover:bg-amber-50/70 border border-[#e1e1db] hover:border-amber-400 rounded-2xl text-left transition cursor-pointer flex items-center justify-between group shadow-3xs"
+              >
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-[#1a2521] group-hover:text-amber-800">Explore Yorkshire Ecosystem</span>
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full">In progress</span>
+                  </div>
+                  <p className="text-[11px] text-[#51615a]">Regional mapping across South and West Yorkshire</p>
+                </div>
+                <ArrowRight className="w-5 h-5 text-amber-600 group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
               </button>
             </div>
           </div>
