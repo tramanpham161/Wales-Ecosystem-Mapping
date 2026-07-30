@@ -10,7 +10,7 @@ interface PhotoItem {
   bgGradient: string;
 }
 
-const OD_PHOTOS: PhotoItem[] = [
+const WALES_OD_PHOTOS: PhotoItem[] = [
   {
     id: 'OD-1',
     filename: 'OD-1.jpg',
@@ -69,9 +69,74 @@ const OD_PHOTOS: PhotoItem[] = [
   },
 ];
 
-export const OrganisationPhotoGrid: React.FC = () => {
+const YORKSHIRE_OD_PHOTOS: PhotoItem[] = [
+  {
+    id: 'OD-1',
+    filename: 'OD-1.jpg',
+    title: 'Bradford Digital & STEM Innovation Hub',
+    location: 'Bradford City Centre & Manningham',
+    spanClass: 'col-span-1 sm:col-span-2 md:col-span-2 md:row-span-2 min-h-[200px]',
+    bgGradient: 'from-teal-600 via-teal-700 to-emerald-800',
+  },
+  {
+    id: 'OD-2',
+    filename: 'OD-2.jpg',
+    title: 'Sheffield Advanced Manufacturing Academy',
+    location: 'Sheffield AMRC Innovation District',
+    spanClass: 'col-span-1 sm:col-span-1 md:col-span-1 md:row-span-1 min-h-[160px]',
+    bgGradient: 'from-emerald-600 via-teal-700 to-cyan-800',
+  },
+  {
+    id: 'OD-3',
+    filename: 'OD-3.jpg',
+    title: 'Leeds FinTech & Youth Skills Lab',
+    location: 'Leeds City Region',
+    spanClass: 'col-span-1 sm:col-span-1 md:col-span-1 md:row-span-2 min-h-[200px]',
+    bgGradient: 'from-cyan-600 via-teal-700 to-emerald-700',
+  },
+  {
+    id: 'OD-4',
+    filename: 'OD-4.jpg',
+    title: 'Rotherham Green Retrofitting Workshop',
+    location: 'Rotherham & Dearne Valley',
+    spanClass: 'col-span-1 sm:col-span-1 md:col-span-1 md:row-span-1 min-h-[160px]',
+    bgGradient: 'from-teal-700 via-emerald-600 to-cyan-700',
+  },
+  {
+    id: 'OD-5',
+    filename: 'OD-5.jpg',
+    title: 'Doncaster Logistics & Tech Round Table',
+    location: 'Doncaster Gateway Hub',
+    spanClass: 'col-span-1 sm:col-span-2 md:col-span-2 md:row-span-1 min-h-[160px]',
+    bgGradient: 'from-emerald-700 via-teal-600 to-slate-700',
+  },
+  {
+    id: 'OD-6',
+    filename: 'OD-6.jpg',
+    title: 'Kirklees Valley Creative & Textile Circle',
+    location: 'Huddersfield & Dewsbury',
+    spanClass: 'col-span-1 sm:col-span-1 md:col-span-1 md:row-span-1 min-h-[160px]',
+    bgGradient: 'from-cyan-700 via-teal-800 to-emerald-600',
+  },
+  {
+    id: 'OD-7',
+    filename: 'OD-7.jpg',
+    title: 'Barnsley Community Youth Skills Network',
+    location: 'Barnsley & Dearne Valley',
+    spanClass: 'col-span-1 sm:col-span-1 md:col-span-1 md:row-span-1 min-h-[160px]',
+    bgGradient: 'from-teal-600 via-emerald-700 to-cyan-800',
+  },
+];
+
+interface OrganisationPhotoGridProps {
+  placeName?: 'Wales' | 'Yorkshire';
+}
+
+export const OrganisationPhotoGrid: React.FC<OrganisationPhotoGridProps> = ({ placeName = 'Wales' }) => {
   // Track images that failed to load so we render a stylized placeholder box
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const isYorkshire = placeName === 'Yorkshire';
+  const photos = isYorkshire ? YORKSHIRE_OD_PHOTOS : WALES_OD_PHOTOS;
 
   const handleImageError = (id: string) => {
     setFailedImages((prev) => ({ ...prev, [id]: true }));
@@ -79,7 +144,7 @@ export const OrganisationPhotoGrid: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-5 auto-rows-[170px] text-left">
-      {OD_PHOTOS.map((photo) => {
+      {photos.map((photo) => {
           const hasFailed = failedImages[photo.id];
 
           return (
