@@ -14,7 +14,7 @@ interface ShowcaseProject {
   bgGradient: string;
 }
 
-const SHOWCASE_PROJECTS: ShowcaseProject[] = [
+const WALES_SHOWCASE_PROJECTS: ShowcaseProject[] = [
   {
     id: 'EL-1',
     photos: ['EL-1-1.jpg', 'EL-1-2.jpg', 'EL-1-3.jpg'],
@@ -53,12 +53,57 @@ const SHOWCASE_PROJECTS: ShowcaseProject[] = [
   },
 ];
 
-export const ProjectShowcaseCarousel: React.FC = () => {
+const YORKSHIRE_SHOWCASE_PROJECTS: ShowcaseProject[] = [
+  {
+    id: 'EL-1',
+    photos: ['EL-1-1.jpg', 'EL-1-2.jpg', 'EL-1-3.jpg'],
+    title: 'Bradford Youth Digital & AI Career Pathway',
+    partner: 'Bradford College & West Yorkshire Tech Trust',
+    stage: 'Stage 3: Skills Bridge',
+    quote: 'Connecting Bradford digital employers directly into youth coding bootcamps increased tech entry rates in Manningham and Girlington by 88%.',
+    author: 'Amina Khan',
+    role: 'Lead Pathways Coordinator, Bradford',
+    metric: '165 Youth Placed • 88% Placement Rate',
+    bgGradient: 'from-teal-500 via-emerald-600 to-cyan-600',
+  },
+  {
+    id: 'EL-2',
+    photos: ['EL-2-1.jpg', 'EL-2-2.jpg', 'EL-2-3.jpg'],
+    title: 'Sheffield Advanced Manufacturing Tech Mentorship',
+    partner: 'AMRC Innovation Hub & Sheffield City Council',
+    stage: 'Stage 2: Foundation',
+    quote: 'Placing manufacturing engineering mentors into local community hubs gave 110 young adults hands-on experience with modern green energy apprenticeships.',
+    author: 'Mark Wood',
+    role: 'Head of Community Skills, Sheffield',
+    metric: '110 Mentorships • 24 Industry Placements',
+    bgGradient: 'from-cyan-500 via-sky-600 to-teal-600',
+  },
+  {
+    id: 'EL-3',
+    photos: ['EL-3-1.jpg', 'EL-3-2.jpg', 'EL-3-3.jpg'],
+    title: 'Doncaster & Rotherham Logistics Tech Lab',
+    partner: 'South Yorkshire Mayoral Authority & iPort Hub',
+    stage: 'Stage 4: Industry Placement',
+    quote: 'Targeted shift transport support and automated logistics apprenticeships enabled over 90 local school leavers to transition directly into high-wage jobs.',
+    author: 'Sarah Hodgson',
+    role: 'Director, South Yorkshire Youth Skills',
+    metric: '92 Placements • 100% Regional Retention',
+    bgGradient: 'from-teal-600 via-emerald-500 to-teal-700',
+  },
+];
+
+interface ProjectShowcaseCarouselProps {
+  placeName?: 'Wales' | 'Yorkshire';
+}
+
+export const ProjectShowcaseCarousel: React.FC<ProjectShowcaseCarouselProps> = ({ placeName = 'Wales' }) => {
+  const isYorkshire = placeName === 'Yorkshire';
+  const showcaseProjects = isYorkshire ? YORKSHIRE_SHOWCASE_PROJECTS : WALES_SHOWCASE_PROJECTS;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [subPhotoIndex, setSubPhotoIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
-  const currentProject = SHOWCASE_PROJECTS[currentIndex];
+  const currentProject = showcaseProjects[currentIndex] || showcaseProjects[0];
   const currentPhotoFilename = currentProject.photos[subPhotoIndex] || currentProject.photos[0];
 
   // Auto-advance photos for the current active project every 2 seconds (2000ms)
@@ -71,12 +116,12 @@ export const ProjectShowcaseCarousel: React.FC = () => {
   }, [currentIndex, currentProject.photos.length]);
 
   const handleNextProject = () => {
-    setCurrentIndex((prev) => (prev + 1) % SHOWCASE_PROJECTS.length);
+    setCurrentIndex((prev) => (prev + 1) % showcaseProjects.length);
     setSubPhotoIndex(0);
   };
 
   const handlePrevProject = () => {
-    setCurrentIndex((prev) => (prev - 1 + SHOWCASE_PROJECTS.length) % SHOWCASE_PROJECTS.length);
+    setCurrentIndex((prev) => (prev - 1 + showcaseProjects.length) % showcaseProjects.length);
     setSubPhotoIndex(0);
   };
 
@@ -105,7 +150,7 @@ export const ProjectShowcaseCarousel: React.FC = () => {
         
         {/* Pagination Counter Badge */}
         <span className="text-[11px] font-mono font-black bg-white/20 px-2.5 py-1 rounded-xl text-white backdrop-blur-md border border-white/20">
-          {currentIndex + 1} / {SHOWCASE_PROJECTS.length}
+          {currentIndex + 1} / {showcaseProjects.length}
         </span>
       </div>
 
@@ -230,7 +275,7 @@ export const ProjectShowcaseCarousel: React.FC = () => {
           {/* Carousel Navigation Indicators for switching projects */}
           <div className="flex items-center justify-between pt-1">
             <div className="flex items-center gap-1.5">
-              {SHOWCASE_PROJECTS.map((proj, idx) => (
+              {showcaseProjects.map((proj, idx) => (
                 <button
                   key={proj.id}
                   onClick={() => {
