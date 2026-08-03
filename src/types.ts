@@ -6,28 +6,76 @@ export type FrictionPoint =
   | 'In Work'
   | 'Re-entry';
 
-export type SectorType = 'Tech/Digital' | 'Green Economy' | 'Creative' | 'Foundational';
+export type SectorType = 
+  | 'Charity'
+  | 'Community organisation'
+  | 'Partnership'
+  | 'Anchor institution'
+  | 'Public body'
+  | 'Local authority'
+  | 'Funder'
+  | 'FE'
+  | 'HE'
+  | 'Employer'
+  | 'Independent training provider'
+  | 'Tech/Digital'
+  | 'Green Economy'
+  | 'Creative'
+  | 'Foundational';
+
+export type StrategicRoleType = 
+  | 'Delivers'
+  | 'Funds'
+  | 'Influences'
+  | 'Convenes'
+  | 'Connects'
+  | 'Amplifies'
+  | 'Generates evidence'
+  | 'Builds capacity';
+
+export type ThematicAreaType = 
+  | 'Careers'
+  | 'Employability'
+  | 'Skills'
+  | 'Youth voice'
+  | 'Mentoring'
+  | 'Enterprise'
+  | 'Apprenticeships'
+  | 'Community development'
+  | 'Inclusive growth'
+  | 'Social mobility'
+  | 'Family support'
+  | 'Financial wellbeing'
+  | 'Digital inclusion'
+  | 'Volunteering'
+  | 'Employer engagement'
+  | 'Social value'
+  | 'Mental wellbeing';
 
 export type LookingForType = 'Funding' | 'Referrals' | 'Employer Partners';
 
 export interface Organization {
   id: string;
   name: string;
-  location: string; // city/region (Cardiff, Swansea, Newport, Wrexham, Bangor, Valleys)
+  location: string; // city/region
   address: string; // full address
   keyContact: string; // person name & role
-  currentProjectsCount: number; // number of projects active at the moment
-  impact: string; // description of their impact so far
-  lookingForDetail: string; // detailed what they are looking for / need help with
+  currentProjectsCount: number; // number of projects active
+  impact: string; // description of impact
+  lookingForDetail: string; // detailed need/request
   latitude: number;
   longitude: number;
   assignedTab: FrictionPoint;
-  sector: SectorType;
+  sector: SectorType | string;
+  strategicRole?: StrategicRoleType;
+  thematicAreas?: (ThematicAreaType | string)[];
+  partnerships?: string;
+  notes?: string;
   lookingFor: LookingForType;
   capacityStatus: string; // e.g., "Accepting Referrals", "Seeking Partners", "Active Cohorts Open"
-  currentProject: string; // brief sentence describing their current Welsh initiative
-  solutions: string[]; // what they are actively doing to solve that specific tab's friction point
-  description: string; // a short general description of the organization
+  currentProject: string; // brief sentence describing initiative
+  solutions: string[]; // what they are actively doing to solve friction
+  description: string; // short general description
   journeyStages: string[];
   contactEmail?: string;
   website?: string;
@@ -57,6 +105,8 @@ export interface GapOfferRequest {
   region?: 'north' | 'mid' | 'southwest' | 'southeast';
   category?: 'resource' | 'job' | 'funding' | 'others';
   urgency?: 'urgent' | 'not urgent';
+  thematicArea?: ThematicAreaType | string;
+  strategicRole?: StrategicRoleType | string;
   workingWithOaha?: boolean;
   createdAt?: string;
 }
