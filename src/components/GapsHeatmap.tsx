@@ -94,6 +94,56 @@ function getGapOfferCoordinates(item: GapOfferRequest, organizations: any[], isY
   return [baseCoords[0] + latJitter, baseCoords[1] + lngJitter];
 }
 
+export function getSectorMarkerStyle(sectorName?: string) {
+  const s = (sectorName || '').toLowerCase().trim();
+  if (s.includes('charity')) {
+    return { color: '#E11D48', symbol: 'C', name: 'Charity' };
+  }
+  if (s.includes('community')) {
+    return { color: '#059669', symbol: 'CO', name: 'Community organisation' };
+  }
+  if (s.includes('partnership')) {
+    return { color: '#2563EB', symbol: 'P', name: 'Partnership' };
+  }
+  if (s.includes('anchor')) {
+    return { color: '#7C3AED', symbol: 'A', name: 'Anchor institution' };
+  }
+  if (s.includes('public body')) {
+    return { color: '#0284C7', symbol: 'PB', name: 'Public body' };
+  }
+  if (s.includes('local authority')) {
+    return { color: '#0D9488', symbol: 'LA', name: 'Local authority' };
+  }
+  if (s.includes('funder')) {
+    return { color: '#D97706', symbol: 'F', name: 'Funder' };
+  }
+  if (s === 'fe' || s.includes('further education') || s.includes('college')) {
+    return { color: '#EA580C', symbol: 'FE', name: 'FE' };
+  }
+  if (s === 'he' || s.includes('higher education') || s.includes('university')) {
+    return { color: '#4F46E5', symbol: 'HE', name: 'HE' };
+  }
+  if (s.includes('employer')) {
+    return { color: '#0891B2', symbol: 'E', name: 'Employer' };
+  }
+  if (s.includes('independent training') || s.includes('training provider')) {
+    return { color: '#65A30D', symbol: 'TP', name: 'Independent training provider' };
+  }
+  if (s.includes('tech') || s.includes('digital')) {
+    return { color: '#29B6BD', symbol: 'T', name: 'Tech/Digital' };
+  }
+  if (s.includes('green')) {
+    return { color: '#3AB03A', symbol: 'G', name: 'Green Economy' };
+  }
+  if (s.includes('creative')) {
+    return { color: '#FF9900', symbol: 'Cr', name: 'Creative' };
+  }
+  if (s.includes('foundational')) {
+    return { color: '#9E2A2B', symbol: 'Fn', name: 'Foundational' };
+  }
+  return { color: '#29B6BD', symbol: 'O', name: sectorName || 'Organisation' };
+}
+
 export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({ 
   gapsOffers, 
   filteredGapsOffers = [],
@@ -138,7 +188,7 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
     if (laData[clean]) return { name: clean, data: laData[clean] };
 
     if (clean.includes('Hull') || clean.includes('Kingston upon Hull')) return { name: 'Kingston upon Hull', data: laData['Kingston upon Hull'] };
-    if (clean.includes('York')) return { name: 'City of York', data: laData['City of York'] };
+    if (clean.includes('York') && !clean.includes('North') && !clean.includes('East')) return { name: 'City of York', data: laData['City of York'] };
     if (clean.includes('East Riding')) return { name: 'East Riding of Yorkshire', data: laData['East Riding of Yorkshire'] };
     if (clean.includes('Kirklees')) return { name: 'Kirklees', data: laData['Kirklees'] };
     if (clean.includes('Calderdale')) return { name: 'Calderdale', data: laData['Calderdale'] };
@@ -162,53 +212,7 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
     if (!gapsMarkersGroupRef.current) return;
     gapsMarkersGroupRef.current.clearLayers();
 
-    if (organizations && organizations.length > 0) {
-      organizations.forEach((org) => {
-        if (!org.latitude || !org.longitude) return;
-
-        const coords: [number, number] = [org.latitude, org.longitude];
-        const markerColor = '#29B6BD';
-        const size = 26;
-
-        const customIcon = L.divIcon({
-          className: 'custom-div-icon',
-          html: `
-            <div class="relative flex items-center justify-center rounded-full transition-all duration-300 hover:scale-125 cursor-pointer shadow-md" 
-                 style="width: ${size}px; height: ${size}px; background-color: ${markerColor}; border: 2px solid #ffffff;"
-                 title="${org.name}"
-            >
-              <span class="text-white text-[10px] font-black select-none">P</span>
-            </div>
-          `,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2]
-        });
-
-        const marker = L.marker(coords, { icon: customIcon }).addTo(gapsMarkersGroupRef.current);
-
-        const popupHtml = `
-          <div class="p-3.5 font-sans w-56 space-y-2 text-left">
-            <div class="flex items-center justify-between gap-1.5 border-b border-slate-100 pb-1.5">
-              <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded text-white bg-[#29B6BD]">
-                Project
-              </span>
-            </div>
-            <div>
-              <h4 class="text-xs font-bold text-[#1a2521] leading-snug break-words m-0">${org.name}</h4>
-              <p class="text-[10px] text-slate-500 font-medium m-0 mt-1">📍 ${org.location} • ${org.sector || ''}</p>
-            </div>
-            <div class="pt-1">
-              <button onclick="window.openDetailedOrgPopup && window.openDetailedOrgPopup('${org.id}')" class="w-full text-center py-1.5 bg-[#29B6BD] hover:bg-[#1d8e93] text-[10px] text-white font-bold rounded-md transition cursor-pointer shadow-2xs">
-                View details
-              </button>
-            </div>
-          </div>
-        `;
-
-        marker.bindPopup(popupHtml, { closeButton: true, autoPan: false, offset: [0, -size / 2] });
-        marker.on('mouseover', () => marker.openPopup());
-      });
-    }
+    // Note: Organisation spots are omitted from the heatmap per requirements. Spots are only for Requests, Offers, Collaborations.
 
     const listToPlot = (filteredGapsOffers || []).filter(item => item.type !== 'Gap');
     listToPlot.forEach((item) => {
@@ -290,8 +294,8 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
       const container = document.getElementById('wales-heatmap-real-map');
       if (!container || heatMapRef.current) return;
 
-      const centerCoords: [number, number] = isYorkshire ? [53.65, -1.50] : [52.25, -3.8];
-      const zoomLevel = isYorkshire ? 9.2 : 7.4;
+      const centerCoords: [number, number] = isYorkshire ? [53.85, -1.25] : [52.25, -3.8];
+      const zoomLevel = isYorkshire ? 8.1 : 7.4;
 
       const mapInstance = L.map('wales-heatmap-real-map', {
         zoomControl: false,
@@ -331,17 +335,6 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
       fetchGeoJSON
         .then((geoData: any) => {
           if (!heatMapRef.current || !heatMapRef.current._container) return;
-
-          // Exclude North Yorkshire Council or any oversized boundary blocking the view
-          if (isYorkshire && geoData && geoData.features) {
-            geoData.features = geoData.features.filter((f: any) => {
-              const name = (f.properties?.LAD24NM || f.properties?.LAD22NM || f.properties?.name || '').trim();
-              if (name.includes('North Yorkshire')) {
-                return false;
-              }
-              return true;
-            });
-          }
 
           const getFeatureStyle = (feature: any) => {
             const rawName = (feature.properties?.LAD24NM || feature.properties?.LAD22NM || feature.properties?.LAD13NM || feature.properties?.name || '').trim();
@@ -718,6 +711,85 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
                           ))}
                         </select>
                       </div>
+                    </div>
+
+                    {/* Stat Cards */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white rounded-xl p-3 border border-[#e1e1db] shadow-2xs">
+                        <span className="text-[10px] font-bold text-[#51615a] block uppercase tracking-wider">Deprivation Rate</span>
+                        <p className="text-2xl font-extrabold text-[#176e73] mt-0.5">{selectedLA.deprivationPct}%</p>
+                        <span className="text-[10px] text-[#51615a]">ONS Census 2021 (1+ Dim)</span>
+                      </div>
+                      <div className="bg-white rounded-xl p-3 border border-[#e1e1db] shadow-2xs">
+                        <span className="text-[10px] font-bold text-[#51615a] block uppercase tracking-wider">Systemic Gap Score</span>
+                        <p className={`text-2xl font-extrabold mt-0.5 ${selectedLA.gapScore > 10 ? 'text-rose-700' : selectedLA.gapScore > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                          {selectedLA.gapScore > 0 ? `+${selectedLA.gapScore}` : selectedLA.gapScore}
+                        </p>
+                        <span className="text-[10px] text-[#51615a]">Struggle vs Help Index</span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bars for Struggle & Help */}
+                    <div className="bg-white p-4 rounded-xl border border-[#e1e1db] space-y-3 shadow-2xs">
+                      <div>
+                        <div className="flex justify-between text-[11px] font-bold text-[#1a2521] mb-1">
+                          <span className="flex items-center gap-1">
+                            <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Community Struggle Level:</span>
+                          </span>
+                          <span className="text-amber-700">{selectedLA.struggleScore}/100</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                          <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: `${selectedLA.struggleScore}%` }} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[11px] font-bold text-[#1a2521] mb-1">
+                          <span className="flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-[#29B6BD]" />
+                            <span>Support & Help Received:</span>
+                          </span>
+                          <span className="text-[#176e73]">{selectedLA.helpScore}/100</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                          <div className="bg-[#29B6BD] h-full rounded-full transition-all duration-500" style={{ width: `${selectedLA.helpScore}%` }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Key Barriers */}
+                    {selectedLA.barriers && selectedLA.barriers.length > 0 && (
+                      <div className="bg-white p-4 rounded-xl border border-[#e1e1db] space-y-2 shadow-2xs">
+                        <span className="text-[11px] font-bold text-[#1a2521] flex items-center gap-1.5">
+                          <Info className="w-3.5 h-3.5 text-[#29B6BD]" />
+                          <span>Key Identified Local Barriers:</span>
+                        </span>
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {selectedLA.barriers.map((barrier: string, idx: number) => (
+                            <span 
+                              key={idx} 
+                              className="px-2.5 py-1 bg-[#F4F4F0] border border-[#e1e1db] rounded-lg text-[11px] font-semibold text-[#51615a] flex items-center gap-1"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#29B6BD]" />
+                              {barrier}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* External ONS Link */}
+                    <div className="pt-2">
+                      <a
+                        href={`https://www.ons.gov.uk/census/maps/choropleth/population/household-deprivation/hh-deprivation/household-is-deprived-in-one-dimension`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2 bg-[#176e73] hover:bg-[#12585c] text-white font-bold rounded-xl text-center text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-2xs"
+                      >
+                        <span>Explore ONS Census Data ({selectedLA.name})</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </a>
                     </div>
                   </div>
                 </div>
