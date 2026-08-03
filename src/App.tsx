@@ -48,7 +48,7 @@ import { SYSTEMIC_TABS } from './data';
 import { FrictionPoint, Organization, SectorType, LookingForType, GapOfferRequest, Commitment, EvidenceLearning, SubmissionType, UserProfile } from './types';
 import { Logo } from './components/Logo';
 import LearnerJourneyFlow from './components/LearnerJourneyFlow';
-import { GapsHeatmap } from './components/GapsHeatmap';
+import { GapsHeatmap, getSectorMarkerStyle } from './components/GapsHeatmap';
 import { PlaceShowcaseVideo } from './components/PlaceShowcaseVideo';
 import { OrganisationPhotoGrid } from './components/OrganisationPhotoGrid';
 import { ProjectShowcaseCarousel } from './components/ProjectShowcaseCarousel';
@@ -123,8 +123,24 @@ export function getRegionForEvidence(item: any): 'north' | 'mid' | 'southwest' |
   return null;
 }
 
-export function getRegionFromLocation(location: string): 'north' | 'mid' | 'southwest' | 'southeast' | null {
+export function getRegionFromLocation(location: string): string | null {
+  if (!location) return null;
   const loc = location.toLowerCase();
+  
+  if (loc.includes('leeds')) return 'Leeds';
+  if (loc.includes('bradford')) return 'Bradford';
+  if (loc.includes('wakefield')) return 'Wakefield';
+  if (loc.includes('kirklees') || loc.includes('huddersfield')) return 'Kirklees';
+  if (loc.includes('calderdale') || loc.includes('halifax')) return 'Calderdale';
+  if (loc.includes('sheffield')) return 'Sheffield';
+  if (loc.includes('barnsley')) return 'Barnsley';
+  if (loc.includes('doncaster')) return 'Doncaster';
+  if (loc.includes('rotherham')) return 'Rotherham';
+  if (loc.includes('west yorkshire')) return 'West Yorkshire';
+  if (loc.includes('south yorkshire')) return 'South Yorkshire';
+  if (loc.includes('yorkshire')) return 'Yorkshire-wide';
+  if (loc.includes('national')) return 'National';
+
   if (loc.includes('bangor') || loc.includes('wrexham') || loc.includes('clwyd') || loc.includes('gogledd') || loc.includes('north')) {
     return 'north';
   }
@@ -402,6 +418,8 @@ export default function App() {
   // Filters for directory
   const [sectorFilter, setSectorFilter] = useState<string>('All');
   const [lookingForFilter, setLookingForFilter] = useState<string>('All');
+  const [thematicFilter, setThematicFilter] = useState<string>('All');
+  const [strategicRoleFilter, setStrategicRoleFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [detailedOrg, setDetailedOrg] = useState<Organization | null>(null);
@@ -691,16 +709,27 @@ export default function App() {
         const stages = (org.journeyStages && org.journeyStages.length > 0)
           ? org.journeyStages
           : (org.assignedTab ? [org.assignedTab] : []);
-        const matchesTab = stages.includes(activeTab as any) || org.assignedTab === activeTab;
+        const matchesTab = stages.some(s => {
+          if (!s) return false;
+          const sClean = String(s).toLowerCase();
+          const tabClean = String(activeTab).toLowerCase();
+          return sClean === tabClean || sClean.startsWith(tabClean) || tabClean.startsWith(sClean);
+        }) || org.assignedTab === activeTab;
         if (!matchesTab) {
             return false;
         }
       }
       if (sectorFilter !== 'All' && org.sector !== sectorFilter) return false;
       if (lookingForFilter !== 'All' && org.lookingFor !== lookingForFilter) return false;
+      if (strategicRoleFilter !== 'All' && org.strategicRole !== strategicRoleFilter) return false;
+      if (thematicFilter !== 'All') {
+        if (!org.thematicAreas || !org.thematicAreas.some(t => String(t).toLowerCase() === thematicFilter.toLowerCase())) return false;
+      }
       if (selectedRegionFilter !== 'All') {
-        const r = getRegionFromLocation(org.location);
-        if (r !== selectedRegionFilter) return false;
+        const loc = (org.location || '').toLowerCase();
+        const reg = selectedRegionFilter.toLowerCase();
+        const inferredReg = (getRegionFromLocation(org.location) || '').toLowerCase();
+        if (!loc.includes(reg) && inferredReg !== reg) return false;
       }
 
       if (searchQuery.trim() !== '') {
@@ -709,12 +738,16 @@ export default function App() {
         const matchesLocation = org.location.toLowerCase().includes(query);
         const matchesProject = org.currentProject.toLowerCase().includes(query);
         const matchesDesc = (org.description || '').toLowerCase().includes(query);
+        const matchesRole = (org.strategicRole || '').toLowerCase().includes(query);
+        const matchesPartnerships = (org.partnerships || '').toLowerCase().includes(query);
+        const matchesNotes = (org.notes || '').toLowerCase().includes(query);
+        const matchesThematic = (org.thematicAreas || []).some(t => String(t).toLowerCase().includes(query));
         const matchesSolutions = (org.solutions || []).some(s => s.toLowerCase().includes(query));
-        return matchesName || matchesLocation || matchesProject || matchesDesc || matchesSolutions;
+        return matchesName || matchesLocation || matchesProject || matchesDesc || matchesRole || matchesPartnerships || matchesNotes || matchesThematic || matchesSolutions;
       }
       return true;
     });
-  }, [baseOrganizations, activeTab, sectorFilter, lookingForFilter, searchQuery, selectedRegionFilter]);
+  }, [baseOrganizations, activeTab, sectorFilter, lookingForFilter, strategicRoleFilter, thematicFilter, searchQuery, selectedRegionFilter]);
 
   // 3. Filter the gaps, offers & requests dynamically
   const filteredGapsOffers = useMemo(() => {
@@ -924,21 +957,9 @@ export default function App() {
     filteredOrganizations.forEach((org) => {
       const isSelected = org.id === selectedOrgId;
       
-      let markerColor = '#51615a'; 
-      let iconSymbol = '•';
-      if (org.sector === 'Tech/Digital') {
-        markerColor = '#29B6BD'; 
-        iconSymbol = 'T';
-      } else if (org.sector === 'Green Economy') {
-        markerColor = '#3AB03A'; 
-        iconSymbol = 'G';
-      } else if (org.sector === 'Creative') {
-        markerColor = '#FF9900'; 
-        iconSymbol = 'C';
-      } else if (org.sector === 'Foundational') {
-        markerColor = '#9E2A2B'; 
-        iconSymbol = 'F';
-      }
+      const sectorStyle = getSectorMarkerStyle(org.sector);
+      const markerColor = sectorStyle.color;
+      const iconSymbol = sectorStyle.symbol;
 
       const size = isSelected ? 48 : 36;
       
@@ -1574,30 +1595,45 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 }
               </p>
 
-              {/* Simple Information Metrics */}
+              {/* Call-to-action Survey Link for Yorkshire */}
+              {selectedPlace === 'yorkshire' && (
+                <div className="pt-1 pb-2 flex flex-wrap items-center">
+                  <a
+                    href="https://docs.google.com/forms/d/e/1FAIpQLScf9QbVprOhj2Fg1WjM4JJXfGGg2M46pupEMhQEXHkSMcFWmg/viewform"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 px-5 py-3 bg-[#29B6BD] hover:bg-[#1f9197] text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xs hover:shadow-md transition cursor-pointer"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Register / Sign Up Your Organisation (Yorkshire Survey)</span>
+                  </a>
+                </div>
+              )}
+
+              {/* Statistics Metrics */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-1">
                 <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
-                  <span className="text-xs font-bold text-[#51615a]">Mapped Initiatives</span>
+                  <span className="text-xs font-bold text-[#51615a]">Active organisations</span>
                   <p className="text-3xl font-extrabold text-[#29B6BD] mt-1">
-                    {selectedPlace === 'wales' ? 48 : 32}
+                    {baseOrganizations.length}
                   </p>
                 </div>
                 <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
                   <span className="text-xs font-bold text-[#51615a]">Gaps & Offers</span>
                   <p className="text-3xl font-extrabold text-[#3EB049] mt-1">
-                    {selectedPlace === 'wales' ? 144 : 88}
+                    {baseGapsOffers.length}
                   </p>
                 </div>
                 <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
                   <span className="text-xs font-bold text-[#51615a]">Agreed Commitments</span>
                   <p className="text-3xl font-extrabold text-[#F89E1B] mt-1">
-                    {selectedPlace === 'wales' ? 10 : 6}
+                    {baseCommitments.length}
                   </p>
                 </div>
                 <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
                   <span className="text-xs font-bold text-[#51615a]">Evidence Logs</span>
                   <p className="text-3xl font-extrabold text-[#888E8F] mt-1">
-                    {selectedPlace === 'wales' ? 4 : 3}
+                    {baseEvidenceLearning.length}
                   </p>
                 </div>
               </div>
@@ -2413,27 +2449,27 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
                 <div className="min-h-[28px] flex items-center justify-center">
-                  <span className="text-xs font-bold text-[#51615a] leading-tight">Mapped Initiatives</span>
+                  <span className="text-xs font-bold text-[#51615a] leading-tight">Active organisations</span>
                 </div>
-                <p className="text-3xl font-extrabold text-[#29B6BD] mt-1">{organizations.length}</p>
+                <p className="text-3xl font-extrabold text-[#29B6BD] mt-1">{baseOrganizations.length}</p>
               </div>
               <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
                 <div className="min-h-[28px] flex items-center justify-center">
                   <span className="text-xs font-bold text-[#51615a] leading-tight">Gaps & Offers</span>
                 </div>
-                <p className="text-3xl font-extrabold text-[#3EB049] mt-1">{gapsOffers.length}</p>
+                <p className="text-3xl font-extrabold text-[#3EB049] mt-1">{baseGapsOffers.length}</p>
               </div>
               <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
                 <div className="min-h-[28px] flex items-center justify-center">
                   <span className="text-xs font-bold text-[#51615a] leading-tight">Agreed Commitments</span>
                 </div>
-                <p className="text-3xl font-extrabold text-[#F89E1B] mt-1">{commitments.length}</p>
+                <p className="text-3xl font-extrabold text-[#F89E1B] mt-1">{baseCommitments.length}</p>
               </div>
               <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
                 <div className="min-h-[28px] flex items-center justify-center">
                   <span className="text-xs font-bold text-[#51615a] leading-tight">Evidence Logs</span>
                 </div>
-                <p className="text-3xl font-extrabold text-[#888E8F] mt-1">{evidenceLearning.length}</p>
+                <p className="text-3xl font-extrabold text-[#888E8F] mt-1">{baseEvidenceLearning.length}</p>
               </div>
             </div>
 
@@ -3104,7 +3140,40 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-[#51615a] uppercase">Sub-Region / Area</label>
+                      <select
+                        value={selectedRegionFilter}
+                        onChange={(e) => setSelectedRegionFilter(e.target.value)}
+                        className="w-full mt-1 px-2 py-1.5 text-xs border border-[#e1e1db] rounded-lg focus:outline-none focus:border-[#29B6BD] bg-white"
+                      >
+                        <option value="All">All Locations</option>
+                        {selectedPlace === 'yorkshire' ? (
+                          <>
+                            <option value="Leeds">Leeds</option>
+                            <option value="Bradford">Bradford</option>
+                            <option value="Wakefield">Wakefield</option>
+                            <option value="Kirklees">Kirklees</option>
+                            <option value="Calderdale">Calderdale</option>
+                            <option value="Sheffield">Sheffield</option>
+                            <option value="Barnsley">Barnsley</option>
+                            <option value="Doncaster">Doncaster</option>
+                            <option value="Rotherham">Rotherham</option>
+                            <option value="West Yorkshire">West Yorkshire</option>
+                            <option value="South Yorkshire">South Yorkshire</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="north">North Wales</option>
+                            <option value="mid">Mid Wales</option>
+                            <option value="southwest">South West Wales</option>
+                            <option value="southeast">South East Wales</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+
                     <div>
                       <label className="text-[10px] font-bold text-[#51615a] uppercase">Sector</label>
                       <select
@@ -3113,10 +3182,68 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                         className="w-full mt-1 px-2 py-1.5 text-xs border border-[#e1e1db] rounded-lg focus:outline-none focus:border-[#29B6BD] bg-white"
                       >
                         <option value="All">All Sectors</option>
+                        <option value="Charity">Charity</option>
+                        <option value="Community organisation">Community organisation</option>
+                        <option value="Partnership">Partnership</option>
+                        <option value="Anchor institution">Anchor institution</option>
+                        <option value="Public body">Public body</option>
+                        <option value="Local authority">Local authority</option>
+                        <option value="Funder">Funder</option>
+                        <option value="FE">FE</option>
+                        <option value="HE">HE</option>
+                        <option value="Employer">Employer</option>
+                        <option value="Independent training provider">Independent training provider</option>
                         <option value="Tech/Digital">Tech / Digital</option>
                         <option value="Green Economy">Green Economy</option>
                         <option value="Creative">Creative</option>
                         <option value="Foundational">Foundational</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-[#51615a] uppercase">Strategic Role</label>
+                      <select
+                        value={strategicRoleFilter}
+                        onChange={(e) => setStrategicRoleFilter(e.target.value)}
+                        className="w-full mt-1 px-2 py-1.5 text-xs border border-[#e1e1db] rounded-lg focus:outline-none focus:border-[#29B6BD] bg-white"
+                      >
+                        <option value="All">All Roles</option>
+                        <option value="Delivers">Delivers</option>
+                        <option value="Funds">Funds</option>
+                        <option value="Influences">Influences</option>
+                        <option value="Convenes">Convenes</option>
+                        <option value="Connects">Connects</option>
+                        <option value="Amplifies">Amplifies</option>
+                        <option value="Generates evidence">Generates evidence</option>
+                        <option value="Builds capacity">Builds capacity</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-[#51615a] uppercase">Thematic Area</label>
+                      <select
+                        value={thematicFilter}
+                        onChange={(e) => setThematicFilter(e.target.value)}
+                        className="w-full mt-1 px-2 py-1.5 text-xs border border-[#e1e1db] rounded-lg focus:outline-none focus:border-[#29B6BD] bg-white"
+                      >
+                        <option value="All">All Thematic Areas</option>
+                        <option value="Careers">Careers</option>
+                        <option value="Employability">Employability</option>
+                        <option value="Skills">Skills</option>
+                        <option value="Youth voice">Youth voice</option>
+                        <option value="Mentoring">Mentoring</option>
+                        <option value="Enterprise">Enterprise</option>
+                        <option value="Apprenticeships">Apprenticeships</option>
+                        <option value="Community development">Community development</option>
+                        <option value="Inclusive growth">Inclusive growth</option>
+                        <option value="Social mobility">Social mobility</option>
+                        <option value="Family support">Family support</option>
+                        <option value="Financial wellbeing">Financial wellbeing</option>
+                        <option value="Digital inclusion">Digital inclusion</option>
+                        <option value="Volunteering">Volunteering</option>
+                        <option value="Employer engagement">Employer engagement</option>
+                        <option value="Social value">Social value</option>
+                        <option value="Mental wellbeing">Mental wellbeing</option>
                       </select>
                     </div>
 
@@ -3134,6 +3261,28 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                       </select>
                     </div>
                   </div>
+
+                  {(sectorFilter !== 'All' || strategicRoleFilter !== 'All' || thematicFilter !== 'All' || lookingForFilter !== 'All' || selectedRegionFilter !== 'All' || activeTab !== 'All' || searchQuery !== '') && (
+                    <div className="pt-2 border-t border-[#e1e1db] flex items-center justify-between">
+                      <span className="text-[11px] text-[#51615a] font-medium">
+                        Showing {filteredOrganizations.length} of {baseOrganizations.length} organisations
+                      </span>
+                      <button
+                        onClick={() => {
+                          setSectorFilter('All');
+                          setStrategicRoleFilter('All');
+                          setThematicFilter('All');
+                          setLookingForFilter('All');
+                          setSelectedRegionFilter('All');
+                          setActiveTab('All');
+                          setSearchQuery('');
+                        }}
+                        className="text-[11px] font-bold text-[#29B6BD] hover:underline cursor-pointer"
+                      >
+                        Reset All Filters
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Organisations Scroll List */}
@@ -4140,6 +4289,79 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 <p>{detailedOrg.description}</p>
               </div>
 
+              {/* Strategic Role & Key Properties Card */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                {detailedOrg.strategicRole && (
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-[#176e73] tracking-wider block">Strategic Role</span>
+                    <span className="inline-block mt-1 px-2.5 py-1 bg-[#176e73] text-white font-semibold rounded-lg text-[11px]">
+                      {detailedOrg.strategicRole}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-[#51615a] tracking-wider block">Ecosystem Status</span>
+                  <span className="inline-block mt-1 px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold rounded-lg text-[11px]">
+                    {detailedOrg.capacityStatus}
+                  </span>
+                </div>
+              </div>
+
+              {/* Strategic Partnerships & Regional Notes */}
+              {(detailedOrg.partnerships || detailedOrg.notes) && (
+                <div className="space-y-3 p-4 bg-teal-50/40 border border-teal-100 rounded-2xl">
+                  {detailedOrg.partnerships && (
+                    <div>
+                      <h5 className="font-bold text-[#1a2521] text-[11px] flex items-center gap-1.5 mb-1">
+                        🤝 <span className="uppercase tracking-wider text-[10px] text-[#176e73]">Key Partnerships & Networks</span>
+                      </h5>
+                      <p className="text-[#2c3e35] text-[11px] leading-relaxed bg-white/80 p-2.5 rounded-xl border border-teal-100/80">
+                        {detailedOrg.partnerships}
+                      </p>
+                    </div>
+                  )}
+                  {detailedOrg.notes && (
+                    <div>
+                      <h5 className="font-bold text-[#1a2521] text-[11px] flex items-center gap-1.5 mb-1">
+                        📝 <span className="uppercase tracking-wider text-[10px] text-amber-800">Ecosystem Notes & Insights</span>
+                      </h5>
+                      <p className="text-[#3a2f1c] text-[11px] leading-relaxed bg-amber-50/60 p-2.5 rounded-xl border border-amber-200/50">
+                        {detailedOrg.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Thematic Areas & Journey Stages Badges */}
+              <div className="space-y-3 pt-1">
+                {detailedOrg.thematicAreas && detailedOrg.thematicAreas.length > 0 && (
+                  <div>
+                    <span className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider block mb-1.5">Thematic Areas Covered</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {detailedOrg.thematicAreas.map((area, idx) => (
+                        <span key={idx} className="px-2.5 py-0.5 bg-[#29B6BD]/10 border border-[#29B6BD]/30 text-[#176e73] font-semibold rounded-full text-[10px]">
+                          {area}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {detailedOrg.journeyStages && detailedOrg.journeyStages.length > 0 && (
+                  <div>
+                    <span className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider block mb-1.5">Learner Journey Stages (J1–J5)</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {detailedOrg.journeyStages.map((stage, idx) => (
+                        <span key={idx} className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold rounded-full text-[10px]">
+                          {stage}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* OAHA alignment / partnership status box */}
               <div>
                 {detailedOrg.workingWithOaha ? (
@@ -4153,22 +4375,6 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                         <span className="block font-bold text-amber-950 text-[10px]">How we are working with OAHA:</span>
                         <p className="text-amber-800 leading-relaxed mt-0.5">Deploying joint initiatives for the {detailedOrg.assignedTab.toLowerCase()} stage, specifically: {detailedOrg.currentProject.toLowerCase()}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-amber-200/30">
-                        <div>
-                          <span className="block font-bold text-amber-950 text-[9px] uppercase tracking-wider">Duration</span>
-                          <span className="text-amber-800 text-[10px]">
-                            {detailedOrg.id.includes('cyo') 
-                              ? '18 months (since Jan 2025)' 
-                              : detailedOrg.id.includes('clwyd') 
-                                ? '12 months (since July 2025)'
-                                : '10 months (since Sept 2025)'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="block font-bold text-amber-950 text-[9px] uppercase tracking-wider">Collaboration</span>
-                          <span className="text-amber-800 text-[10px]">{detailedOrg.sector.toLowerCase()} sector integration</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 ) : (
@@ -4176,7 +4382,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     <Info className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
                     <div className="text-[11px]">
                       <p className="font-bold text-[10px] uppercase tracking-wider text-gray-800">Not directly partnered with OAHA</p>
-                      <p className="text-gray-500 mt-0.5 leading-relaxed">Independent participant in the wider Wales employment ecosystem.</p>
+                      <p className="text-gray-500 mt-0.5 leading-relaxed">Independent participant in the wider Yorkshire stakeholder ecosystem.</p>
                     </div>
                   </div>
                 )}
@@ -4185,7 +4391,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
               <div className="p-4 bg-slate-50 border border-gray-100 rounded-2xl space-y-2">
                 <h4 className="font-bold text-[#1a2521] flex items-center gap-1.5">
                   <Activity className="w-4 h-4 text-[#29B6BD]" />
-                  <span>Current Active Welsh Project</span>
+                  <span>Current Active Regional Project / Initiative</span>
                 </h4>
                 <p className="font-medium text-[#1a2521]">"{detailedOrg.currentProject}"</p>
                 <p className="text-[11px] text-[#51615a]"><strong>Ecosystem Impact:</strong> {detailedOrg.impact}</p>
@@ -4955,8 +5161,19 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
               <div className="space-y-2 pt-2 border-t border-[#e1e1db]">
                 <h4 className="font-bold text-[#1a2521] text-sm">How you can contribute</h4>
                 <p>
-                  Are you operating or funding programmes in Yorkshire? You can share local intelligence, list your organisation, or submit offers and requests to support local young people.
+                  Are you operating or funding programmes in Yorkshire? You can share local intelligence, list your organisation via our sign-up survey, or submit offers and requests to support local young people.
                 </p>
+                <div className="pt-1">
+                  <a
+                    href="https://docs.google.com/forms/d/e/1FAIpQLScf9QbVprOhj2Fg1WjM4JJXfGGg2M46pupEMhQEXHkSMcFWmg/viewform"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#29B6BD] hover:bg-[#1f9197] text-white font-bold rounded-xl text-xs transition cursor-pointer shadow-2xs"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Register / Sign Up Your Organisation (Yorkshire Survey)</span>
+                  </a>
+                </div>
               </div>
             </div>
 
