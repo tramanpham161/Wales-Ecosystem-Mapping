@@ -760,7 +760,15 @@ export default function App() {
         if (g.assignedTab && !matchesTab) return false;
       }
 
-      if (gapTypeFilter !== 'All' && g.type !== gapTypeFilter) return false;
+      if (gapTypeFilter !== 'All') {
+        if (gapTypeFilter === 'Activity') {
+          if (g.type !== 'Activity' && g.type !== 'Offer' && g.type !== 'Collaboration' && g.type !== 'Project') return false;
+        } else if (gapTypeFilter === 'Request') {
+          if (g.type !== 'Request' && g.type !== 'Gap') return false;
+        } else if (g.type !== gapTypeFilter) {
+          return false;
+        }
+      }
       
       // Filter by Region Focus
       if (selectedRegionFilter !== 'All') {
@@ -2727,27 +2735,18 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 <div>
                   <h2 className="text-base font-bold text-[#1a2521] flex items-center gap-2">
                     <Globe className="w-5 h-5 text-[#29B6BD]" />
-                    <span>Journey to Opportunity & Support Map</span>
+                    <span>Support Map</span>
                   </h2>
-                  <p className="text-xs text-[#51615a] mt-1">
-                    Explore how a young person’s opportunities develop over time, and where organisations and services are supporting people at each point in the journey.
-                  </p>
                 </div>
               </div>
 
               {/* HOW OPPORTUNITY TAKES SHAPE INTRO */}
               <div className="bg-[#f9f9f7] p-4 rounded-xl text-xs text-[#51615a] space-y-3 border border-[#e1e1db]">
                 <h3 className="font-bold text-[#1a2521]">How opportunity takes shape</h3>
-                <p>A young person’s understanding of what they might do in the future begins long before they apply for a course, apprenticeship or job. It is shaped by their family and carers, school, friends, community, role models, local employers and the opportunities they can see around them.</p>
-                <p>These influences can expand what a young person believes is possible—or make some pathways difficult to see, understand or access. The journey is not always linear. People may pause, change direction, leave education or employment, encounter barriers or need support to reconnect with opportunity.</p>
-                <p>Select a stage below to explore the charities, community organisations, education providers, employers and services supporting people at that point in the journey.</p>
+                <p>A young person's future is shaped long before any application—by family, school, community, and local opportunities. These influences can either open doors or leave paths hidden, and since life is rarely a straight line, young people often need support to navigate setbacks and changes in direction.</p>
+                <p>Select a stage below to find the activities and services supporting them along the way.</p>
               </div>
 
-              {/* JOURNEY STAGES HEADING */}
-              <h2 className="text-lg font-bold text-[#1a2521]">
-                Journey to Opportunity
-              </h2>
-              
               <LearnerJourneyFlow
                 activeTab={activeTab}
                 onTabSelect={(tabId) => {
@@ -2761,35 +2760,6 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 tabColorHex={tabColorHex}
               />
 
-              {/* NEW MAP HEADING & INTRO BLOCK */}
-              <div className="bg-white rounded-2xl border border-[#e1e1db] p-6 space-y-4 shadow-xs">
-                <h2 className="text-lg font-bold text-[#1a2521]">
-                  {activeTab !== 'All' 
-                    ? `Support and opportunity at this stage` 
-                    : `Support and opportunity across the journey`}
-                </h2>
-                <p className="text-xs text-[#51615a] leading-relaxed">
-                  {activeTab !== 'All'
-                    ? `Explore the organisations and services supporting people at ${activeTab}. Compare mapped provision with local deprivation and opportunity data to understand existing strengths, underserved communities and possible gaps in support.`
-                    : `Explore organisations and services across the whole journey. Compare mapped provision with local deprivation and opportunity data to identify strengths, weak connections and opportunities for collaboration or investment.`}
-                </p>
-                
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-4">
-                  <span className="text-xs font-semibold text-[#51615a]">
-                    {activeTab !== 'All' 
-                      ? `Viewing: ${activeTab}` 
-                      : `Viewing: All stages`}
-                  </span>
-                  {activeTab !== 'All' && (
-                    <button
-                      onClick={() => setActiveTab('All')}
-                      className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#51615a] text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
-                    >
-                      <span>View the whole journey</span>
-                    </button>
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* MAP VISUALIZATION BLOCK WITH INTEGRATED DUAL PERSPECTIVE & MAP FILTERS */}
