@@ -42,7 +42,9 @@ import {
   LogOut,
   Building2,
   ChevronDown,
-  AlertCircle
+  AlertCircle,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 import { SYSTEMIC_TABS } from './data';
 import { FrictionPoint, Organization, SectorType, LookingForType, GapOfferRequest, Commitment, EvidenceLearning, SubmissionType, UserProfile } from './types';
@@ -1611,29 +1613,23 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
               )}
 
               {/* Statistics Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
                 <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
-                  <span className="text-xs font-bold text-[#51615a]">Active organisations</span>
+                  <span className="text-xs font-bold text-[#51615a]">Active Organisations</span>
                   <p className="text-3xl font-extrabold text-[#29B6BD] mt-1">
                     {baseOrganizations.length}
                   </p>
                 </div>
                 <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
-                  <span className="text-xs font-bold text-[#51615a]">Gaps & Offers</span>
+                  <span className="text-xs font-bold text-[#51615a]">Mapped Activities</span>
                   <p className="text-3xl font-extrabold text-[#3EB049] mt-1">
                     {baseGapsOffers.length}
                   </p>
                 </div>
                 <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
-                  <span className="text-xs font-bold text-[#51615a]">Agreed Commitments</span>
+                  <span className="text-xs font-bold text-[#51615a]">Ecosystem Programmes</span>
                   <p className="text-3xl font-extrabold text-[#F89E1B] mt-1">
                     {baseCommitments.length}
-                  </p>
-                </div>
-                <div className="bg-slate-50 border border-[#e1e1db] rounded-xl p-4 text-center shadow-2xs">
-                  <span className="text-xs font-bold text-[#51615a]">Evidence Logs</span>
-                  <p className="text-3xl font-extrabold text-[#888E8F] mt-1">
-                    {baseEvidenceLearning.length}
                   </p>
                 </div>
               </div>
@@ -2446,35 +2442,169 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
             </div>
 
             {/* Live Ecosystem Health Board */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
-                <div className="min-h-[28px] flex items-center justify-center">
-                  <span className="text-xs font-bold text-[#51615a] leading-tight">Active organisations</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 flex flex-col justify-between shadow-xs">
+                <div className="text-center">
+                  <span className="text-xs font-bold text-[#51615a] uppercase tracking-wider block">Active Organisations</span>
+                  <p className="text-3xl font-extrabold text-[#29B6BD] mt-1">{organizations.length + YORKSHIRE_ORGANIZATIONS.length}</p>
                 </div>
-                <p className="text-3xl font-extrabold text-[#29B6BD] mt-1">{baseOrganizations.length}</p>
+                <div className="mt-3 pt-3 border-t border-[#e1e1db]/60 flex items-center justify-around text-xs font-semibold text-[#51615a]">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#29B6BD]"></span>
+                    Wales: <strong className="text-[#1a2521] font-bold">{organizations.length}</strong>
+                  </span>
+                  <span className="text-[#e1e1db]">|</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#29B6BD]"></span>
+                    Yorkshire: <strong className="text-[#1a2521] font-bold">{YORKSHIRE_ORGANIZATIONS.length}</strong>
+                  </span>
+                </div>
               </div>
-              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
-                <div className="min-h-[28px] flex items-center justify-center">
-                  <span className="text-xs font-bold text-[#51615a] leading-tight">Gaps & Offers</span>
+
+              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 flex flex-col justify-between shadow-xs">
+                <div className="text-center">
+                  <span className="text-xs font-bold text-[#51615a] uppercase tracking-wider block">Mapped Activities</span>
+                  <p className="text-3xl font-extrabold text-[#3EB049] mt-1">{gapsOffers.length + YORKSHIRE_GAPS_OFFERS.length}</p>
                 </div>
-                <p className="text-3xl font-extrabold text-[#3EB049] mt-1">{baseGapsOffers.length}</p>
+                <div className="mt-3 pt-3 border-t border-[#e1e1db]/60 flex items-center justify-around text-xs font-semibold text-[#51615a]">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#3EB049]"></span>
+                    Wales: <strong className="text-[#1a2521] font-bold">{gapsOffers.length}</strong>
+                  </span>
+                  <span className="text-[#e1e1db]">|</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#3EB049]"></span>
+                    Yorkshire: <strong className="text-[#1a2521] font-bold">{YORKSHIRE_GAPS_OFFERS.length}</strong>
+                  </span>
+                </div>
               </div>
-              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
-                <div className="min-h-[28px] flex items-center justify-center">
-                  <span className="text-xs font-bold text-[#51615a] leading-tight">Agreed Commitments</span>
+
+              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 flex flex-col justify-between shadow-xs">
+                <div className="text-center">
+                  <span className="text-xs font-bold text-[#51615a] uppercase tracking-wider block">Ecosystem Programmes</span>
+                  <p className="text-3xl font-extrabold text-[#F89E1B] mt-1">{commitments.length + YORKSHIRE_COMMITMENTS.length}</p>
                 </div>
-                <p className="text-3xl font-extrabold text-[#F89E1B] mt-1">{baseCommitments.length}</p>
-              </div>
-              <div className="bg-white border border-[#e1e1db] rounded-2xl p-4 text-center flex flex-col justify-between shadow-xs">
-                <div className="min-h-[28px] flex items-center justify-center">
-                  <span className="text-xs font-bold text-[#51615a] leading-tight">Evidence Logs</span>
+                <div className="mt-3 pt-3 border-t border-[#e1e1db]/60 flex items-center justify-around text-xs font-semibold text-[#51615a]">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#F89E1B]"></span>
+                    Wales: <strong className="text-[#1a2521] font-bold">{commitments.length}</strong>
+                  </span>
+                  <span className="text-[#e1e1db]">|</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#F89E1B]"></span>
+                    Yorkshire: <strong className="text-[#1a2521] font-bold">{YORKSHIRE_COMMITMENTS.length}</strong>
+                  </span>
                 </div>
-                <p className="text-3xl font-extrabold text-[#888E8F] mt-1">{baseEvidenceLearning.length}</p>
               </div>
             </div>
 
-            {/* Place Showcase Video (UN Global Compact & Welsh Partners Co-design Workshop) - At bottom of overview */}
-            <PlaceShowcaseVideo />
+            {/* Place-Based Ecosystem Photo Showcase (Varied Grid Sizes) */}
+            <div className="bg-white rounded-2xl border border-[#e1e1db] p-5 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e1e1db]/60 pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-[#1a2521] flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-[#29B6BD]" />
+                    <span>Place-Based Ecosystem Photo Showcase</span>
+                  </h3>
+                  <p className="text-xs text-[#51615a] mt-0.5">
+                    Co-design workshops, regional convenings, and place-based partner collaborations across Wales & Yorkshire.
+                  </p>
+                </div>
+              </div>
+
+              {/* Bento Photo Grid with varied tile sizes */}
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                {/* 1. Large Hero Photo (Spans 2 cols, 2 rows on large) */}
+                <div className="md:col-span-2 lg:col-span-2 md:row-span-2 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group min-h-[260px] md:min-h-[340px]">
+                  <img
+                    src={import.meta.env.BASE_URL + 'homepage_showcase_1.jpg'}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = import.meta.env.BASE_URL + 'wales_workshop_exact_photo_1785063346660.jpg';
+                    }}
+                    alt="Place-Based Co-Design Workshop"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 text-white pointer-events-none">
+                    <h4 className="text-sm sm:text-base font-extrabold leading-snug">Place-Based Co-Design Workshop</h4>
+                  </div>
+                </div>
+
+                {/* 2. Medium Photo 1 */}
+                <div className="md:col-span-1 lg:col-span-2 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group min-h-[160px]">
+                  <img
+                    src={import.meta.env.BASE_URL + 'homepage_showcase_2.jpg'}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = import.meta.env.BASE_URL + 'OD-1.jpg';
+                    }}
+                    alt="Regional Stakeholder Convening"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white pointer-events-none">
+                    <h5 className="text-xs font-bold">Regional Stakeholder Convening</h5>
+                  </div>
+                </div>
+
+                {/* 3. Medium Photo 2 */}
+                <div className="md:col-span-1 lg:col-span-1 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group min-h-[160px]">
+                  <img
+                    src={import.meta.env.BASE_URL + 'homepage_showcase_3.jpg'}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = import.meta.env.BASE_URL + 'OD-4.jpg';
+                    }}
+                    alt="Ecosystem Action & Alignment"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white pointer-events-none">
+                    <h5 className="text-xs font-bold">Ecosystem Action & Alignment</h5>
+                  </div>
+                </div>
+
+                {/* 4. Small Photo 1 */}
+                <div className="relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[130px]">
+                  <img
+                    src={import.meta.env.BASE_URL + 'homepage_showcase_4.jpg'}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = import.meta.env.BASE_URL + 'EL-1.jpg';
+                    }}
+                    alt="Local Leadership Convening"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2.5 text-white pointer-events-none">
+                    <h5 className="text-[11px] font-bold leading-tight">Local Leadership Convening</h5>
+                  </div>
+                </div>
+
+                {/* 5. Small Photo 2 */}
+                <div className="relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[130px]">
+                  <img
+                    src={import.meta.env.BASE_URL + 'homepage_showcase_5.jpg'}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = import.meta.env.BASE_URL + 'EL-2.jpg';
+                    }}
+                    alt="Impact & Gap Mapping"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2.5 text-white pointer-events-none">
+                    <h5 className="text-[11px] font-bold leading-tight">Impact & Gap Mapping</h5>
+                  </div>
+                </div>
+
+                {/* 6. Small Photo 3 */}
+                <div className="relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[130px]">
+                  <img
+                    src={import.meta.env.BASE_URL + 'homepage_showcase_6.jpg'}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = import.meta.env.BASE_URL + 'OD-3.jpg';
+                    }}
+                    alt="Community Voice Workshop"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2.5 text-white pointer-events-none">
+                    <h5 className="text-[11px] font-bold leading-tight">Community Voice Workshop</h5>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* SECTION 10: ACTIVE ALPHA & DATA-COVERAGE STATEMENT */}
             <div className="w-full bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 sm:p-4 flex items-start gap-3 text-amber-900 shadow-3xs">
