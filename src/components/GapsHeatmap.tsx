@@ -60,36 +60,58 @@ interface RegionData {
 }
 
 function getGapOfferCoordinates(item: GapOfferRequest, organizations: any[], isYorkshire: boolean): [number, number] {
+  let hash = 0;
+  const str = item.id + (item.title || '') + (item.organization || '');
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
   if (item.organization) {
     const org = organizations.find(o => o.name && o.name.toLowerCase().trim() === item.organization.toLowerCase().trim());
     if (org && org.latitude && org.longitude) {
-      return [org.latitude, org.longitude];
+      const latJitter = (((hash & 0x1F) / 31) - 0.5) * 0.012;
+      const lngJitter = ((((hash >> 5) & 0x1F) / 31) - 0.5) * 0.012;
+      return [org.latitude + latJitter, org.longitude + lngJitter];
     }
   }
   
-  const regionCoords: Record<string, [number, number]> = isYorkshire ? {
-    west: [53.80, -1.75],
-    south: [53.45, -1.45],
-    north: [54.00, -1.20],
-    east: [53.75, -0.35]
-  } : {
+  if (isYorkshire) {
+    // Spread evenly across 10 key hubs in West Yorkshire & South Yorkshire
+    const yorkshireHubs: [number, number][] = [
+      [53.8010, -1.5490], // Leeds Center
+      [53.7939, -1.7564], // Bradford Center
+      [53.6850, -1.5030], // Wakefield Center
+      [53.6450, -1.7820], // Huddersfield / Kirklees
+      [53.7250, -1.8600], // Halifax / Calderdale
+      [53.3810, -1.4700], // Sheffield Center
+      [53.5530, -1.4820], // Barnsley
+      [53.4310, -1.3520], // Rotherham
+      [53.5228, -1.1311], // Doncaster
+      [53.6910, -1.6280], // Dewsbury / Spen Valley
+    ];
+
+    const hubIndex = Math.abs(hash) % yorkshireHubs.length;
+    const baseCoords = yorkshireHubs[hubIndex];
+
+    const latJitter = (((hash & 0xFF) / 255) - 0.5) * 0.038;
+    const lngJitter = ((((hash >> 8) & 0xFF) / 255) - 0.5) * 0.038;
+
+    return [baseCoords[0] + latJitter, baseCoords[1] + lngJitter];
+  }
+
+  const regionCoords: Record<string, [number, number]> = {
     north: [53.05, -3.8],
     mid: [52.35, -3.60],
     southwest: [51.85, -4.30],
     southeast: [51.65, -3.15]
   };
   
-  const region = item.region || (isYorkshire ? 'west' : 'mid');
-  const baseCoords = regionCoords[region] || (isYorkshire ? [53.78, -1.55] : [53.75, -1.50]);
+  const region = item.region || 'mid';
+  const baseCoords = regionCoords[region] || [52.35, -3.60];
   
-  let hash = 0;
-  const str = item.id + item.title;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  const latJitter = ((hash & 0xFF) / 255 - 0.5) * 0.15;
-  const lngJitter = (((hash >> 8) & 0xFF) / 255 - 0.5) * 0.15;
+  const maxJitter = 0.15;
+  const latJitter = ((hash & 0xFF) / 255 - 0.5) * maxJitter;
+  const lngJitter = (((hash >> 8) & 0xFF) / 255 - 0.5) * maxJitter;
   
   return [baseCoords[0] + latJitter, baseCoords[1] + lngJitter];
 }
@@ -187,9 +209,6 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
     const clean = (rawName || '').trim();
     if (laData[clean]) return { name: clean, data: laData[clean] };
 
-    if (clean.includes('Hull') || clean.includes('Kingston upon Hull')) return { name: 'Kingston upon Hull', data: laData['Kingston upon Hull'] };
-    if (clean.includes('York') && !clean.includes('North') && !clean.includes('East')) return { name: 'City of York', data: laData['City of York'] };
-    if (clean.includes('East Riding')) return { name: 'East Riding of Yorkshire', data: laData['East Riding of Yorkshire'] };
     if (clean.includes('Kirklees')) return { name: 'Kirklees', data: laData['Kirklees'] };
     if (clean.includes('Calderdale')) return { name: 'Calderdale', data: laData['Calderdale'] };
     if (clean.includes('Bradford')) return { name: 'Bradford', data: laData['Bradford'] };
@@ -374,9 +393,8 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
             filter: (feature: any) => {
               if (isYorkshire) {
                 const rawName = (feature.properties?.LAD24NM || feature.properties?.LAD22NM || feature.properties?.LAD13NM || feature.properties?.name || '').trim();
-                if (rawName.includes('North Yorkshire') || rawName === 'North Yorkshire Council') {
-                  return false;
-                }
+                const { data } = getLAData(rawName);
+                if (!data) return false;
               }
               return true;
             },
