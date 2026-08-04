@@ -168,75 +168,71 @@ export default function LearnerJourneyFlow({
       title: "Home & Community",
       description: "Early influences and foundations",
       fullDetails: "Family, carers, peers, community organisations, local role models and the opportunities visible within a place can shape a young person’s confidence, aspirations and understanding of what may be possible.",
-      svg: (color: string) => <StageBabySvg className="w-16 h-24 sm:w-20 sm:h-28" />
+      svg: (color: string) => <StageBabySvg className="w-10 h-14 sm:w-12 sm:h-16" />
     },
     {
       id: 'School' as FrictionPoint,
       title: "School",
       description: "Awareness, guidance and experience",
       fullDetails: "Support delivered during school that helps young people understand different pathways, build confidence and connect learning with the wider world of work.",
-      svg: (color: string) => <StageToddlerSvg className="w-16 h-24 sm:w-20 sm:h-28" />
+      svg: (color: string) => <StageToddlerSvg className="w-10 h-14 sm:w-12 sm:h-16" />
     },
     {
       id: 'Post-16 Education and Training' as FrictionPoint,
       title: "Post-16",
       description: "Education, training and skills",
       fullDetails: "Further education, sixth form, higher education, vocational training, apprenticeships and other routes that help young people develop qualifications, skills, experience and professional networks.",
-      svg: (color: string) => <StageSchoolchildSvg className="w-16 h-24 sm:w-20 sm:h-28" />
+      svg: (color: string) => <StageSchoolchildSvg className="w-10 h-14 sm:w-12 sm:h-16" />
     },
     {
       id: 'Entry to Work' as FrictionPoint,
       title: "Entry to Work",
       description: "Preparing for and accessing work",
       fullDetails: "Support that helps people understand employment options, build job-readiness and secure work, an apprenticeship or another route into economic opportunity.",
-      svg: (color: string) => <StageYoungAdultSvg className="w-16 h-24 sm:w-20 sm:h-28" />
+      svg: (color: string) => <StageYoungAdultSvg className="w-10 h-14 sm:w-12 sm:h-16" />
     },
     {
       id: 'In Work' as FrictionPoint,
       title: "In Work",
       description: "Belonging, development and progression",
       fullDetails: "The support, workplace culture and development opportunities that help people remain in work, build confidence and skills, and progress into more secure or rewarding roles.",
-      svg: (color: string) => <StageAdultSvg className="w-16 h-24 sm:w-20 sm:h-28" />
+      svg: (color: string) => <StageAdultSvg className="w-10 h-14 sm:w-12 sm:h-16" />
     },
     {
       id: 'Re-entry' as FrictionPoint,
       title: "Re-entry",
       description: "Reconnecting or changing direction",
       fullDetails: "Support for people whose journey has been interrupted, who are outside education or employment, or who need help to return, retrain or find a different route forward.",
-      svg: (color: string) => <StageProfessionalSvg className="w-16 h-24 sm:w-20 sm:h-28" />
+      svg: (color: string) => <StageProfessionalSvg className="w-10 h-14 sm:w-12 sm:h-16" />
     }
   ];
 
   const activeIndex = activeTab === 'All' ? 0 : journeyStages.findIndex(s => s.id === activeTab);
 
   return (
-    <div className="w-full bg-white border border-[#e1e1db] rounded-2xl p-6 shadow-xs relative overflow-hidden mb-6">
+    <div className="w-full bg-white border border-[#e1e1db] rounded-2xl p-3 sm:p-3.5 shadow-xs relative overflow-hidden mb-2">
       {/* Decorative Moving Journey Progress Line (Behind Cards) */}
-      <div className="absolute top-[38%] left-12 right-12 h-[2px] bg-[#e1e1db]/60 -z-0 hidden lg:block" />
+      <div className="absolute top-[26%] left-12 right-12 h-[2px] bg-[#e1e1db]/60 -z-0 hidden lg:block" />
       
       {/* Fill progress transition indicator */}
       <div 
-        className="absolute top-[38%] left-12 h-[2px] bg-[#29B6BD] transition-all duration-500 ease-out -z-0 hidden lg:block"
+        className="absolute top-[26%] left-12 h-[2px] bg-[#29B6BD] transition-all duration-500 ease-out -z-0 hidden lg:block"
         style={{ 
           width: `${(activeIndex / 5) * (100 - (24 * 100 / 1152))}%`, // Adjust relative to endpoints
           backgroundColor: activeTab === 'All' ? '#29B6BD' : tabColorHex[activeTab]
         }}
       />
 
-      <div className="flex flex-col gap-4 relative z-10">
+      <div className="flex flex-col gap-2 relative z-10">
         {/* Journey Header with moving status indicator */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#e1e1db]/60 pb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 border-b border-[#e1e1db]/60 pb-2">
           <div>
-            <span className="text-[10px] font-bold text-[#29B6BD] tracking-wider uppercase">
-              THE JOURNEY TO OPPORTUNITY
-            </span>
-            <h2 className="text-base font-extrabold text-[#1a2521] tracking-tight">
+            <h2 className="text-sm font-extrabold text-[#1a2521] tracking-tight">
               Explore support across the journey
             </h2>
-            <p className="text-xs text-[#51615a] mt-1 italic">People may enter the journey at different points and move between stages as their ambitions and circumstances change.</p>
           </div>
-          <div className="flex items-center gap-2 bg-[#fbfbf9] px-3 py-1 rounded-xl border border-[#e1e1db] text-xs">
-            <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: activeTab === 'All' ? '#29B6BD' : tabColorHex[activeTab] }}></span>
+          <div className="flex items-center gap-2 bg-[#fbfbf9] px-2.5 py-0.5 rounded-xl border border-[#e1e1db] text-[11px]">
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: activeTab === 'All' ? '#29B6BD' : tabColorHex[activeTab] }}></span>
             <span className="text-[#51615a]">
               {activeIndex >= 0 ? (
                 <>
@@ -250,7 +246,7 @@ export default function LearnerJourneyFlow({
         </div>
 
         {/* 6 Stage Column Layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 items-stretch mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 items-stretch mt-1.5">
           {journeyStages.map((stage, i) => {
             const isActive = activeTab === stage.id;
             const stageColor = tabColorHex[stage.id];
@@ -261,30 +257,30 @@ export default function LearnerJourneyFlow({
                 onClick={() => onTabSelect(stage.id)}
                 aria-selected={isActive}
                 role="tab"
-                className={`group flex flex-col justify-start text-left rounded-xl p-4 transition-all duration-300 relative border cursor-pointer ${
+                className={`group flex flex-col justify-start text-left rounded-xl p-2 sm:p-2.5 transition-all duration-300 relative border cursor-pointer ${
                   isActive
-                    ? 'border-[#1a2521] shadow-[0_6px_16px_rgba(26,37,33,0.08)] scale-[1.02] z-10'
+                    ? 'border-[#1a2521] shadow-[0_4px_12px_rgba(26,37,33,0.08)] scale-[1.01] z-10'
                     : 'border-[#e1e1db] hover:border-[#51615a]/40 bg-white'
                 }`}
                 style={{
-                  borderTop: isActive ? `4px solid ${stageColor}` : '1px solid #e1e1db'
+                  borderTop: isActive ? `3px solid ${stageColor}` : '1px solid #e1e1db'
                 }}
               >
                 {/* Title (Journey Label) - Most Prominent */}
-                <h4 className={`text-sm font-bold uppercase tracking-wider leading-snug mb-1 ${
+                <h4 className={`text-xs font-bold uppercase tracking-wider leading-tight mb-0.5 ${
                   isActive ? 'text-[#1a2521]' : 'text-[#1a2521]'
                 }`}>
                   {stage.title}
                 </h4>
 
                 {/* Short Description */}
-                <p className="text-[10px] text-[#51615a] leading-normal line-clamp-2 mb-2">
+                <p className="text-[9px] text-[#51615a] leading-tight line-clamp-1 mb-0.5">
                   {stage.description}
                 </p>
 
                 {/* Stage Number (Secondary Info) */}
-                <div className="flex items-center justify-between mt-auto pt-2 w-full">
-                  <span className="text-[10px] font-bold text-[#969696] uppercase tracking-widest">
+                <div className="flex items-center justify-between mt-auto pt-0.5 w-full">
+                  <span className="text-[9px] font-bold text-[#969696] uppercase tracking-widest">
                     Stage {i + 1}
                   </span>
                   
@@ -294,15 +290,15 @@ export default function LearnerJourneyFlow({
                     onClick={(e) => e.stopPropagation()}
                   >
                     <span
-                      className="w-5 h-5 rounded-full bg-[#fbfbf9] border border-[#e1e1db] text-[#176e73] hover:bg-[#29B6BD] hover:text-white font-serif italic text-[10px] font-bold flex items-center justify-center transition-all cursor-help shadow-2xs"
+                      className="w-3.5 h-3.5 rounded-full bg-[#fbfbf9] border border-[#e1e1db] text-[#176e73] hover:bg-[#29B6BD] hover:text-white font-serif italic text-[8px] font-bold flex items-center justify-center transition-all cursor-help shadow-2xs"
                       title="View stage explanation"
                     >
                       i
                     </span>
 
                     {/* Tooltip on Hover Explaining Stage Details */}
-                    <div className={`absolute ${i >= 3 ? 'right-0' : 'left-0'} top-6 w-64 sm:w-72 p-3.5 bg-[#1a2521] text-white rounded-xl shadow-2xl border border-slate-700 opacity-0 pointer-events-none group-hover/info:opacity-100 group-hover/info:pointer-events-auto transition-all duration-200 z-50 text-left leading-relaxed`}>
-                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
+                    <div className={`absolute ${i >= 3 ? 'right-0' : 'left-0'} top-5 w-64 sm:w-72 p-3 bg-[#1a2521] text-white rounded-xl shadow-2xl border border-slate-700 opacity-0 pointer-events-none group-hover/info:opacity-100 group-hover/info:pointer-events-auto transition-all duration-200 z-50 text-left leading-relaxed`}>
+                      <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-700">
                         <div className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: stageColor }} />
                           <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">
@@ -319,7 +315,7 @@ export default function LearnerJourneyFlow({
 
                 {/* Stick Figure Graphic Container */}
                 <div 
-                  className={`w-full h-20 flex items-center justify-center rounded-lg border my-3 transition-all duration-300 ${
+                  className={`w-full h-10 flex items-center justify-center rounded-lg border my-1 transition-all duration-300 ${
                     isActive 
                       ? 'bg-[#fbfbf9] border-transparent' 
                       : 'bg-[#faf9f6]/80 border-[#e1e1db]/40'
