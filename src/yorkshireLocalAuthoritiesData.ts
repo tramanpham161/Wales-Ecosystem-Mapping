@@ -130,25 +130,5 @@ export const YORKSHIRE_LOCAL_AUTHORITIES_DATA: Record<string, LocalAuthorityData
     "region": "north",
     "barriers": ["High housing costs for young workers", "Hidden pockets in Westfield"],
     "gapScore": -6
-  },
-  "North Yorkshire": {
-    "name": "North Yorkshire",
-    "welshName": "North Yorkshire",
-    "deprivationPct": 29.4,
-    "struggleScore": 56,
-    "helpScore": 50,
-    "region": "north",
-    "barriers": ["Extensive rural transport distances across Scarborough & Selby", "Young talent retention"],
-    "gapScore": 6
-  },
-  "North Yorkshire Council": {
-    "name": "North Yorkshire Council",
-    "welshName": "North Yorkshire",
-    "deprivationPct": 29.4,
-    "struggleScore": 56,
-    "helpScore": 50,
-    "region": "north",
-    "barriers": ["Extensive rural transport distances across Scarborough & Selby", "Young talent retention"],
-    "gapScore": 6
   }
 };
