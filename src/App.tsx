@@ -3369,12 +3369,9 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   <div id="wales-leaflet-map" className="w-full h-full min-h-[350px]" style={{ touchAction: 'none' }} />
 
                   {filteredOrganizations.length === 0 && (
-                    <div className="absolute inset-0 z-[999] bg-white/95 backdrop-blur-xs flex items-center justify-center p-6 text-center">
-                      <div className="max-w-sm">
-                        <HelpCircle className="w-10 h-10 text-[#51615a] mx-auto mb-2" />
-                        <h3 className="text-sm font-semibold text-[#1a2521]">No stage pins plotted</h3>
-                        <p className="text-xs text-[#51615a]">Adjust filters or register an initiative to plot markers on this section of {selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'}.</p>
-                      </div>
+                    <div className="absolute top-12 left-3 z-[1000] bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-amber-200 shadow-sm text-xs flex items-center gap-2 text-[#1a2521] pointer-events-none max-w-xs">
+                      <HelpCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span>No organisation pins match active filters. Showing region map.</span>
                     </div>
                   )}
                 </div>
