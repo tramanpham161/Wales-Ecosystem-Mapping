@@ -488,43 +488,61 @@ export async function fetchOrganisations(): Promise<Organization[]> {
       return fetchOrganisations();
     }
 
-    const localMap = new Map(WELSH_ORGANIZATIONS.map(o => [o.id, o.journeyStages]));
-    return data.map(item => ({
-      id: item.id,
-      name: item.name,
-      location: item.location,
-      address: item.address,
-      keyContact: item.key_contact || '',
-      currentProjectsCount: item.current_projects_count || 0,
-      impact: item.impact || '',
-      lookingForDetail: item.looking_for_detail || '',
-      latitude: item.latitude,
-      longitude: item.longitude,
-      assignedTab: item.assigned_tab as FrictionPoint,
-      sector: item.sector as SectorType,
-      lookingFor: item.looking_for as LookingForType,
-      capacityStatus: item.capacity_status || '',
-      currentProject: item.current_project || '',
-      solutions: item.solutions || [],
-      description: item.description || '',
-      journeyStages: (item.journey_stages && Array.isArray(item.journey_stages) && item.journey_stages.length > 0)
-        ? item.journey_stages
-        : (item.journeyStages && Array.isArray(item.journeyStages) && item.journeyStages.length > 0)
-        ? item.journeyStages
-        : localMap.get(item.id) || (item.assigned_tab ? [item.assigned_tab] : []),
-      contactEmail: item.contact_email,
-      website: item.website,
-      workingWithOaha: item.working_with_oaha ?? false
-    }));
+    const localMap = new Map(WELSH_ORGANIZATIONS.map(o => [o.id, o]));
+    return data.map(item => {
+      const localOrg = localMap.get(item.id);
+      return {
+        id: item.id,
+        name: item.name,
+        location: item.location,
+        address: item.address,
+        keyContact: item.key_contact || '',
+        currentProjectsCount: item.current_projects_count || 0,
+        impact: item.impact || '',
+        lookingForDetail: item.looking_for_detail || '',
+        latitude: item.latitude,
+        longitude: item.longitude,
+        assignedTab: item.assigned_tab as FrictionPoint,
+        sector: item.sector as SectorType,
+        lookingFor: item.looking_for as LookingForType,
+        capacityStatus: item.capacity_status || '',
+        currentProject: item.current_project || '',
+        solutions: item.solutions || [],
+        description: item.description || '',
+        journeyStages: (item.journey_stages && Array.isArray(item.journey_stages) && item.journey_stages.length > 0)
+          ? item.journey_stages
+          : (item.journeyStages && Array.isArray(item.journeyStages) && item.journeyStages.length > 0)
+          ? item.journeyStages
+          : localOrg ? localOrg.journeyStages : (item.assigned_tab ? [item.assigned_tab] : []),
+        thematicAreas: (item.thematic_areas && Array.isArray(item.thematic_areas) && item.thematic_areas.length > 0)
+          ? item.thematic_areas
+          : (item.thematicAreas && Array.isArray(item.thematicAreas) && item.thematicAreas.length > 0)
+          ? item.thematicAreas
+          : (localOrg ? localOrg.thematicAreas : []),
+        contactEmail: item.contact_email,
+        website: item.website,
+        workingWithOaha: item.working_with_oaha ?? false
+      };
+    });
   } catch (e) {
     console.warn('Falling back to local storage for organizations:', e);
     const cached = localStorage.getItem(KEYS.ORGANISATIONS);
+    const localMap = new Map(WELSH_ORGANIZATIONS.map(o => [o.id, o]));
     if (cached) {
-      return JSON.parse(cached);
-    } else {
-      localStorage.setItem(KEYS.ORGANISATIONS, JSON.stringify(WELSH_ORGANIZATIONS));
-      return WELSH_ORGANIZATIONS;
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item: any) => ({
+            ...item,
+            thematicAreas: (item.thematicAreas && Array.isArray(item.thematicAreas) && item.thematicAreas.length > 0)
+              ? item.thematicAreas
+              : (localMap.get(item.id)?.thematicAreas || [])
+          }));
+        }
+      } catch (err) {}
     }
+    localStorage.setItem(KEYS.ORGANISATIONS, JSON.stringify(WELSH_ORGANIZATIONS));
+    return WELSH_ORGANIZATIONS;
   }
 }
 
