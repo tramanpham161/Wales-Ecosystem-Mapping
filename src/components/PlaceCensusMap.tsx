@@ -275,27 +275,6 @@ const YORKSHIRE_DISTRICTS: LocalAuthorityData[] = [
     mappedInitiativesCount: 5,
     openGapsCount: 9,
     highlightedPriority: 'York creative tech apprenticeships, affordable youth housing support, and rail innovation academy.'
-  },
-  {
-    id: 'northyorkshire',
-    name: 'North Yorkshire Council',
-    region: 'North Yorkshire',
-    onsCode: 'E06000065',
-    deprivedOneDimPercent: 29.4,
-    deprivedTwoDimPercent: 10.5,
-    deprivedThreeDimPercent: 2.4,
-    notDeprivedPercent: 57.7,
-    educationDeprivationPercent: 15.1,
-    employmentDeprivationPercent: 12.6,
-    healthDeprivationPercent: 14.9,
-    youthNeetPercent: 3.8,
-    skillsDeficitPercent: 16.5,
-    housingDeprivedPercent: 13.8,
-    population: '615,400',
-    keyChallenge: 'Extensive rural area transport distances across Scarborough, Selby, and Craven; young talent retention.',
-    mappedInitiativesCount: 6,
-    openGapsCount: 13,
-    highlightedPriority: 'Scarborough cyber & coastal technology hub, rural apprentice transport subsidies, and agri-tech.'
   }
 ];
 
