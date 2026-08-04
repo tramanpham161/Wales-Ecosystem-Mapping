@@ -199,7 +199,6 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
     if (clean.includes('Barnsley')) return { name: 'Barnsley', data: laData['Barnsley'] };
     if (clean.includes('Doncaster')) return { name: 'Doncaster', data: laData['Doncaster'] };
     if (clean.includes('Rotherham')) return { name: 'Rotherham', data: laData['Rotherham'] };
-    if (clean.includes('North Yorkshire')) return { name: 'North Yorkshire', data: laData['North Yorkshire'] };
     
     return { name: clean, data: undefined };
   };
@@ -372,6 +371,15 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
           };
 
           const geoLayer = L.geoJSON(geoData, {
+            filter: (feature: any) => {
+              if (isYorkshire) {
+                const rawName = (feature.properties?.LAD24NM || feature.properties?.LAD22NM || feature.properties?.LAD13NM || feature.properties?.name || '').trim();
+                if (rawName.includes('North Yorkshire') || rawName === 'North Yorkshire Council') {
+                  return false;
+                }
+              }
+              return true;
+            },
             style: getFeatureStyle,
             onEachFeature: (feature: any, layer: any) => {
               const rawName = (feature.properties?.LAD24NM || feature.properties?.LAD22NM || feature.properties?.LAD13NM || feature.properties?.name || '').trim();
@@ -519,80 +527,6 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
 
   return (
     <div id="gaps-hybrid-heatmaps-container" className="space-y-6">
-      <div className="bg-white rounded-2xl border border-[#e1e1db] p-5 shadow-xs space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-[#e1e1db]/80">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[#29B6BD]/10 rounded-xl text-[#176e73] shrink-0">
-              <Layers className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base font-bold text-[#1a2521]">Ecosystem Heat Map ({isYorkshire ? 'Yorkshire' : 'Wales'})</h3>
-                {activeStage && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#29B6BD]/10 text-[#176e73] border border-[#29B6BD]/20 text-[10px] font-bold">
-                    Stage: {activeStage}
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-[#51615a] mt-0.5">
-                Analyse spatial distribution and local authority profiles across {isYorkshire ? 'Yorkshire' : 'Wales'}.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-            {onOpenAddGap && (
-              <button
-                onClick={onOpenAddGap}
-                className="px-4 py-2 bg-[#29B6BD] hover:bg-[#1d8e93] text-xs font-bold text-white rounded-xl flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
-              >
-                <Plus className="w-4 h-4 text-white" />
-                <span>Log Entry</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-xs font-bold text-[#1a2521] flex items-center gap-1 mr-1">
-              <Filter className="w-3.5 h-3.5 text-[#29B6BD]" />
-              <span>Map Filters:</span>
-            </span>
-
-            {onGapTypeFilterChange && (
-              <select
-                value={gapTypeFilter || 'All'}
-                onChange={(e) => onGapTypeFilterChange(e.target.value)}
-                className="px-3 py-1.5 text-xs border border-[#e1e1db] rounded-xl focus:outline-none bg-white text-[#51615a] font-medium cursor-pointer"
-              >
-                <option value="All">All Types</option>
-                <option value="Offer">Offers</option>
-                <option value="Request">Requests</option>
-                <option value="Collaboration">Collaborations</option>
-              </select>
-            )}
-
-            {onGapUrgencyFilterChange && (
-              <select
-                value={gapUrgencyFilter || 'All'}
-                onChange={(e) => onGapUrgencyFilterChange(e.target.value)}
-                className="px-3 py-1.5 text-xs border border-[#e1e1db] rounded-xl focus:outline-none bg-white text-[#51615a] font-medium cursor-pointer"
-              >
-                <option value="All">All Urgencies</option>
-                <option value="urgent">Urgent</option>
-                <option value="not urgent">Not Urgent</option>
-              </select>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-[#F4F4F0] border border-[#e1e1db] rounded-xl p-1.5 text-[11px] font-bold text-[#1a2521]">
-            <span className="text-[#51615a] text-[10px] uppercase tracking-wider">Choropleth Layer:</span>
-            <span className="px-2.5 py-0.5 bg-[#29B6BD] text-white rounded-lg text-xs font-bold shadow-2xs">ONS Deprivation Index</span>
-          </div>
-        </div>
-      </div>
-
       {(() => {
         const laData = isYorkshire ? YORKSHIRE_LOCAL_AUTHORITIES_DATA : WALES_LOCAL_AUTHORITIES_DATA;
         const allLAs = Object.values(laData);
@@ -606,14 +540,67 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[10px] font-bold text-[#29B6BD] uppercase tracking-wider flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-[#29B6BD]" />
-                      <span>ONS Census Choropleth</span>
+                      <span>ONS Census Choropleth ({isYorkshire ? 'Yorkshire' : 'Wales'})</span>
                     </span>
+                    {activeStage && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#29B6BD]/10 text-[#176e73] border border-[#29B6BD]/20 text-[10px] font-bold">
+                        {activeStage}
+                      </span>
+                    )}
                   </div>
                   <div 
                     id="wales-heatmap-real-map" 
                     className="w-full h-[360px] rounded-xl border border-gray-200 shadow-inner overflow-hidden z-10" 
                     style={{ minHeight: '360px' }}
                   />
+
+                  {/* MAP FILTERS (Placed directly under the map) */}
+                  <div className="mt-3 p-3 bg-[#F4F4F0] rounded-xl border border-[#e1e1db] flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-bold text-[#1a2521] flex items-center gap-1 mr-1">
+                        <Filter className="w-3.5 h-3.5 text-[#29B6BD]" />
+                        <span>Map Filters:</span>
+                      </span>
+
+                      {onGapTypeFilterChange && (
+                        <select
+                          value={gapTypeFilter || 'All'}
+                          onChange={(e) => onGapTypeFilterChange(e.target.value)}
+                          className="px-2.5 py-1 text-xs border border-[#e1e1db] rounded-xl focus:outline-none bg-white text-[#51615a] font-medium cursor-pointer"
+                        >
+                          <option value="All">All Types</option>
+                          <option value="Request">Requests</option>
+                          <option value="Activity">Activities</option>
+                        </select>
+                      )}
+
+                      {onGapUrgencyFilterChange && (
+                        <select
+                          value={gapUrgencyFilter || 'All'}
+                          onChange={(e) => onGapUrgencyFilterChange(e.target.value)}
+                          className="px-2.5 py-1 text-xs border border-[#e1e1db] rounded-xl focus:outline-none bg-white text-[#51615a] font-medium cursor-pointer"
+                        >
+                          <option value="All">All Urgencies</option>
+                          <option value="urgent">Urgent</option>
+                          <option value="not urgent">Not Urgent</option>
+                        </select>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-[#51615a] uppercase font-bold tracking-wider">Choropleth Layer:</span>
+                      <span className="px-2 py-0.5 bg-[#29B6BD] text-white rounded-lg text-[10px] font-bold shadow-2xs">ONS Deprivation</span>
+                      {onOpenAddGap && (
+                        <button
+                          onClick={onOpenAddGap}
+                          className="px-2.5 py-1 bg-[#29B6BD] hover:bg-[#1d8e93] text-xs font-bold text-white rounded-xl flex items-center gap-1 shadow-2xs transition cursor-pointer shrink-0"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-white" />
+                          <span>Log Entry</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
                   {/* ONS Choropleth & Spot Legend */}
                   <div className="mt-4 pt-3 border-t border-[#e1e1db] space-y-2.5">
