@@ -2512,10 +2512,10 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 </div>
               </div>
 
-              {/* Bento Photo Grid with varied tile sizes */}
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-                {/* 1. Large Hero Photo (Spans 2 cols, 2 rows on large) */}
-                <div className="md:col-span-2 lg:col-span-2 md:row-span-2 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group min-h-[260px] md:min-h-[340px]">
+              {/* Bento Photo Grid with varied tile sizes ending at the same line */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {/* Row 1: Two Wide Highlight Cards (2 cols each = 4 cols total) */}
+                <div className="sm:col-span-2 lg:col-span-2 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[220px]">
                   <img
                     src={import.meta.env.BASE_URL + 'homepage_showcase_1.jpg'}
                     onError={(e) => {
@@ -2529,8 +2529,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   </div>
                 </div>
 
-                {/* 2. Medium Photo 1 */}
-                <div className="md:col-span-1 lg:col-span-2 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group min-h-[160px]">
+                <div className="sm:col-span-2 lg:col-span-2 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[220px]">
                   <img
                     src={import.meta.env.BASE_URL + 'homepage_showcase_2.jpg'}
                     onError={(e) => {
@@ -2539,13 +2538,13 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     alt="Regional Stakeholder Convening"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white pointer-events-none">
-                    <h5 className="text-xs font-bold">Regional Stakeholder Convening</h5>
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 text-white pointer-events-none">
+                    <h5 className="text-sm sm:text-base font-extrabold leading-snug">Regional Stakeholder Convening</h5>
                   </div>
                 </div>
 
-                {/* 3. Medium Photo 2 */}
-                <div className="md:col-span-1 lg:col-span-1 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group min-h-[160px]">
+                {/* Row 2: Four Standard Cards (1 col each = 4 cols total) */}
+                <div className="sm:col-span-1 lg:col-span-1 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[180px]">
                   <img
                     src={import.meta.env.BASE_URL + 'homepage_showcase_3.jpg'}
                     onError={(e) => {
@@ -2559,8 +2558,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   </div>
                 </div>
 
-                {/* 4. Small Photo 1 */}
-                <div className="relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[130px]">
+                <div className="sm:col-span-1 lg:col-span-1 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[180px]">
                   <img
                     src={import.meta.env.BASE_URL + 'homepage_showcase_4.jpg'}
                     onError={(e) => {
@@ -2569,13 +2567,12 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     alt="Local Leadership Convening"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2.5 text-white pointer-events-none">
-                    <h5 className="text-[11px] font-bold leading-tight">Local Leadership Convening</h5>
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white pointer-events-none">
+                    <h5 className="text-xs font-bold">Local Leadership Convening</h5>
                   </div>
                 </div>
 
-                {/* 5. Small Photo 2 */}
-                <div className="relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[130px]">
+                <div className="sm:col-span-1 lg:col-span-1 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[180px]">
                   <img
                     src={import.meta.env.BASE_URL + 'homepage_showcase_5.jpg'}
                     onError={(e) => {
@@ -2584,13 +2581,12 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     alt="Impact & Gap Mapping"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2.5 text-white pointer-events-none">
-                    <h5 className="text-[11px] font-bold leading-tight">Impact & Gap Mapping</h5>
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white pointer-events-none">
+                    <h5 className="text-xs font-bold">Impact & Gap Mapping</h5>
                   </div>
                 </div>
 
-                {/* 6. Small Photo 3 */}
-                <div className="relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[130px]">
+                <div className="sm:col-span-1 lg:col-span-1 relative rounded-xl overflow-hidden border border-[#e1e1db] shadow-2xs group h-[180px]">
                   <img
                     src={import.meta.env.BASE_URL + 'homepage_showcase_6.jpg'}
                     onError={(e) => {
@@ -2599,8 +2595,8 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     alt="Community Voice Workshop"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2.5 text-white pointer-events-none">
-                    <h5 className="text-[11px] font-bold leading-tight">Community Voice Workshop</h5>
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white pointer-events-none">
+                    <h5 className="text-xs font-bold">Community Voice Workshop</h5>
                   </div>
                 </div>
               </div>
