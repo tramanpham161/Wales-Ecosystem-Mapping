@@ -973,11 +973,11 @@ export const YORKSHIRE_ORGANIZATIONS: Organization[] = [
   {
     id: 'org-yorkshire-luminate-education',
     name: 'Luminate Education Group',
-    location: 'Leeds (+ Harrogate, Keighley)',
+    location: 'Leeds (+ Keighley)',
     address: 'Park Lane, Leeds, LS3 1AA',
     keyContact: 'Group Executive Officer',
     currentProjectsCount: 6,
-    impact: '~30,000 students across Leeds City College, Keighley College, Harrogate College, and Leeds Conservatoire.',
+    impact: '~30,000 students across Leeds City College, Keighley College, and Leeds Conservatoire.',
     lookingForDetail: 'Work placement hosts and apprenticeship levy partners.',
     latitude: 53.8010,
     longitude: -1.5580,
@@ -996,7 +996,7 @@ export const YORKSHIRE_ORGANIZATIONS: Organization[] = [
     capacityStatus: 'Accepting Referrals',
     currentProject: 'Delivering vocational FE/HE qualifications, T-Levels, and apprenticeships.',
     solutions: ['Industry-standard vocational centers', 'T-Level industry placements', 'Specialist SEN and inclusion support'],
-    description: 'Major further education group comprising Leeds City College, Keighley College, Harrogate College, and Leeds Conservatoire.',
+    description: 'Major further education group comprising Leeds City College, Keighley College, and Leeds Conservatoire.',
     website: 'https://luminate.ac.uk',
     workingWithOaha: false,
   },
@@ -1173,11 +1173,11 @@ export const YORKSHIRE_ORGANIZATIONS: Organization[] = [
   {
     id: 'org-yorkshire-wakefield-college',
     name: 'Wakefield College (Heart of Yorkshire)',
-    location: 'Wakefield (+ Castleford, Selby)',
+    location: 'Wakefield (+ Castleford)',
     address: 'Margaret St, Wakefield, WF1 2DH',
     keyContact: 'Heart of Yorkshire Leadership',
     currentProjectsCount: 4,
-    impact: 'Established in 1868; merged FE group serving Wakefield, Castleford, and Selby.',
+    impact: 'Established in 1868; merged FE group serving Wakefield and Castleford.',
     lookingForDetail: 'Employer board members and student placement providers.',
     latitude: 53.6850,
     longitude: -1.5030,
@@ -1186,11 +1186,11 @@ export const YORKSHIRE_ORGANIZATIONS: Organization[] = [
     sector: "FE",
     strategicRole: "Delivers",
     thematicAreas: ["Careers","Skills","Apprenticeships"],
-    partnerships: "Castleford College, Selby College",
+    partnerships: "Castleford College",
     notes: "",
     strategicRole: "Delivers",
     thematicAreas: ["Careers","Skills","Apprenticeships"],
-    partnerships: "Castleford College, Selby College",
+    partnerships: "Castleford College",
     notes: "",
     lookingFor: 'Employer Partners',
     capacityStatus: 'Accepting Referrals',
@@ -1462,15 +1462,15 @@ export const YORKSHIRE_ORGANIZATIONS: Organization[] = [
   },
   {
     id: 'org-yorkshire-two-ridings',
-    name: 'Two Ridings Community Foundation',
-    location: 'North & East Yorkshire',
-    address: 'York, Yorkshire',
+    name: 'West & South Yorkshire Community Foundation',
+    location: 'West & South Yorkshire',
+    address: 'Leeds, West Yorkshire',
     keyContact: 'Grants Officer',
     currentProjectsCount: 3,
-    impact: 'Regional community foundation active across North and East Yorkshire, part of Yorkshire Funders.',
+    impact: 'Regional community foundation active across West and South Yorkshire, part of Yorkshire Funders.',
     lookingForDetail: 'Regional grant applications from community groups.',
-    latitude: 53.9590,
-    longitude: -1.0810,
+    latitude: 53.7997,
+    longitude: -1.5491,
     assignedTab: 'Home and Community',
     journeyStages: ['Home and Community'],
     sector: "Funder",
@@ -1484,9 +1484,9 @@ export const YORKSHIRE_ORGANIZATIONS: Organization[] = [
     notes: "",
     lookingFor: 'Funding',
     capacityStatus: 'Active',
-    currentProject: 'Grant-making for rural and semi-urban community projects across North and East Yorkshire.',
-    solutions: ['Rural community grants', 'Youth mental health funding', 'Voluntary sector resilience'],
-    description: 'Community foundation supporting community groups across North and East Yorkshire.',
+    currentProject: 'Grant-making for community projects across West and South Yorkshire.',
+    solutions: ['Community grants', 'Youth mental health funding', 'Voluntary sector resilience'],
+    description: 'Community foundation supporting community groups across West and South Yorkshire.',
     website: 'https://tworidingscf.org.uk',
     workingWithOaha: false,
   },
@@ -2381,7 +2381,7 @@ export const YORKSHIRE_ORGANIZATIONS: Organization[] = [
     id: 'org-yorkshire-careerbay',
     name: 'Careerbay',
     location: 'Yorkshire-wide',
-    address: 'Wakefield / Sheffield / York roots',
+    address: 'Wakefield / Sheffield / Leeds roots',
     keyContact: 'Careerbay Team',
     currentProjectsCount: 3,
     impact: 'Connected 400+ work experience placements in Yorkshire & 600+ UK apprenticeships by removing employer contact paywalls.',
@@ -2420,7 +2420,7 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
     contactEmail: 'hello@caldervalleyyouth.org.uk',
     content: 'We need 15 refurbished laptops for our drop-in youth center in Halifax for pupils without home internet access.',
     assignedTab: 'Home and Community',
-    region: 'north',
+    region: 'west',
     category: 'resource',
     urgency: 'urgent'
   },
@@ -2474,7 +2474,7 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
     contactEmail: 'amina@manninghamforum.org.uk',
     content: 'Over 60 school-leavers share only 4 laptops. We urgently need 20 devices for coding classes in Bradford.',
     assignedTab: 'School',
-    region: 'north',
+    region: 'west',
     category: 'resource',
     urgency: 'urgent'
   },
@@ -2513,7 +2513,7 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
     contactEmail: 'chloe@leedsmentoring.org.uk',
     content: 'Targeted transition support for vulnerable Year 6 pupils entering secondary education.',
     assignedTab: 'School',
-    region: 'north',
+    region: 'west',
     category: 'resource',
     urgency: 'urgent'
   },
@@ -2528,17 +2528,17 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
     contactEmail: 'contact@kirkleesgreentrades.org.uk',
     content: 'Young post-16 vocational students face up to £45 per week in bus fares to attend practical trade workshops.',
     assignedTab: 'Post-16 Education and Training',
-    region: 'north',
+    region: 'west',
     category: 'funding',
     urgency: 'urgent'
   },
   {
     id: 'yorkshire-p16-req-2',
     type: 'Request',
-    title: 'Workplace safety equipment requests for engineering apprentices in Hull',
+    title: 'Workplace safety equipment requests for engineering apprentices in Rotherham',
     submittedBy: 'Gareth Smith',
-    organization: 'Humber Maritime Skills Trust',
-    contactEmail: 'gareth@humbermaritime.co.uk',
+    organization: 'Rotherham Engineering Skills Trust',
+    contactEmail: 'gareth@rotherhamengineering.co.uk',
     content: 'Requesting grants to equip 20 low-income trainees with certified safety boots and helmets.',
     assignedTab: 'Post-16 Education and Training',
     region: 'southeast',
@@ -2554,7 +2554,7 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
     contactEmail: 'hello@leedsfintechdiversity.org.uk',
     content: 'Offering paid 6-week software development and business analytics internships for young people aged 18-24.',
     assignedTab: 'Post-16 Education and Training',
-    region: 'north',
+    region: 'west',
     category: 'job',
     urgency: 'not urgent'
   },
@@ -2567,7 +2567,7 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
     contactEmail: 'simon@wakefieldgreentrades.org.uk',
     content: 'Fast-track 3-week practical insulation and heat pump installation training for post-16 learners.',
     assignedTab: 'Post-16 Education and Training',
-    region: 'north',
+    region: 'west',
     category: 'job',
     urgency: 'urgent'
   },
@@ -2595,17 +2595,17 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
     contactEmail: 'tariq@keighleyemployment.org.uk',
     content: 'Requesting £40 travel pass contributions for young candidates attending work trials.',
     assignedTab: 'Entry to Work',
-    region: 'north',
+    region: 'west',
     category: 'funding',
     urgency: 'not urgent'
   },
   {
     id: 'yorkshire-e2w-act-1',
     type: 'Activity',
-    title: 'Digital interview prep & CV repair pop-up in Scunthorpe',
+    title: 'Digital interview prep & CV repair pop-up in Doncaster',
     submittedBy: 'Julie Patel',
-    organization: 'Humber Young Workers Gateway',
-    contactEmail: 'julie@humbergateway.org.uk',
+    organization: 'South Yorkshire Young Workers Gateway',
+    contactEmail: 'julie@syyoungworkers.org.uk',
     content: 'Weekly drop-in sessions for resume optimization and mock video interviews for school leavers.',
     assignedTab: 'Entry to Work',
     region: 'southeast',
@@ -2662,20 +2662,20 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
     contactEmail: 'priya@wyleadership.org.uk',
     content: 'Evening leadership development sessions for young employees in tech, retail, and public sector.',
     assignedTab: 'In Work',
-    region: 'north',
+    region: 'west',
     category: 'job',
     urgency: 'not urgent'
   },
   {
     id: 'yorkshire-iw-act-2',
     type: 'Activity',
-    title: 'Digital skills progression masterclasses for retail workers in York',
+    title: 'Digital skills progression masterclasses for retail workers in Bradford',
     submittedBy: 'Gary Wood',
-    organization: 'York Digital Skills Partnership',
-    contactEmail: 'gary@yorkdigital.org.uk',
+    organization: 'Bradford Digital Skills Partnership',
+    contactEmail: 'gary@bradfordskills.org.uk',
     content: 'Free evening classes covering data analysis and digital marketing for frontline staff.',
     assignedTab: 'In Work',
-    region: 'north',
+    region: 'west',
     category: 'resource',
     urgency: 'urgent'
   },
@@ -2684,10 +2684,10 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
   {
     id: 'yorkshire-re-req-1',
     type: 'Request',
-    title: 'Supported employment links for care-experienced youth in Grimsby',
+    title: 'Supported employment links for care-experienced youth in Barnsley',
     submittedBy: 'Sam Taylor',
-    organization: 'North East Lincs Youth Foundation',
-    contactEmail: 'sam@nelincsyouth.org.uk',
+    organization: 'Barnsley Youth Foundation',
+    contactEmail: 'sam@barnsleyyouth.org.uk',
     content: 'Seeking employers willing to offer supported trial shifts for re-integrating young adults.',
     assignedTab: 'Re-entry',
     region: 'southeast',
@@ -2697,23 +2697,23 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
   {
     id: 'yorkshire-re-req-2',
     type: 'Request',
-    title: 'Transport subsidies for adults returning to education in Skipton',
+    title: 'Transport subsidies for adults returning to education in Dewsbury',
     submittedBy: 'Helen Briggs',
-    organization: 'Craven Community Education Trust',
-    contactEmail: 'helen@craveneducation.org.uk',
+    organization: 'Kirklees Community Education Trust',
+    contactEmail: 'helen@kirkleeseducation.org.uk',
     content: 'Seeking bursary support for rural adult returners commuting to vocational centers.',
     assignedTab: 'Re-entry',
-    region: 'north',
+    region: 'west',
     category: 'funding',
     urgency: 'not urgent'
   },
   {
     id: 'yorkshire-re-act-1',
     type: 'Activity',
-    title: 'Clean energy retraining academy taster sessions in Hull',
+    title: 'Clean energy retraining academy taster sessions in Leeds',
     submittedBy: 'Dan Mercer',
-    organization: 'Humber Offshore Energy Skills Hub',
-    contactEmail: 'dan@humberenergy.org.uk',
+    organization: 'West Yorkshire Green Energy Skills Hub',
+    contactEmail: 'dan@wygreenenergy.org.uk',
     content: 'Fully funded 4-week retraining program covering wind turbine maintenance and green technology.',
     assignedTab: 'Re-entry',
     region: 'southeast',
@@ -2729,7 +2729,7 @@ export const YORKSHIRE_GAPS_OFFERS: GapOfferRequest[] = [
     contactEmail: 'fatima@bradfordpathways.org.uk',
     content: '1-on-1 career coaching, childcare navigation, and flexible shift matching for returning parents.',
     assignedTab: 'Re-entry',
-    region: 'north',
+    region: 'west',
     category: 'resource',
     urgency: 'urgent'
   }
@@ -2758,7 +2758,7 @@ export const YORKSHIRE_COMMITMENTS: Commitment[] = [
     nextSteps: 'Securing 20 corporate pledges for laptop donations and guaranteed job interviews for bootcamp graduates.',
     dependencies: 'Broadband infrastructure sign-off in Manningham.',
     assignedTab: 'School',
-    region: 'north'
+    region: 'west'
   },
   {
     id: 'commit-yorkshire-p16-1',
@@ -2782,7 +2782,7 @@ export const YORKSHIRE_COMMITMENTS: Commitment[] = [
     nextSteps: 'Enrolling 60 non-graduate young jobseekers across Bradford, Leeds, and Wakefield into fast-track entry roles.',
     dependencies: 'Employer skills charter adoption.',
     assignedTab: 'Entry to Work',
-    region: 'north'
+    region: 'west'
   },
   {
     id: 'commit-yorkshire-iw-1',
@@ -2806,7 +2806,7 @@ export const YORKSHIRE_COMMITMENTS: Commitment[] = [
     nextSteps: 'Deploying initial 35 green energy apprentice placements across social housing retrofit schemes.',
     dependencies: 'Co-funding approval from regional retrofit budget.',
     assignedTab: 'Re-entry',
-    region: 'north'
+    region: 'west'
   }
 ];
 
@@ -2818,7 +2818,7 @@ export const YORKSHIRE_EVIDENCE_LEARNING: EvidenceLearning[] = [
     assignedTab: 'Home and Community',
     description: 'Youth feedback highlighted that formal college environments intimidated unengaged 16-18 year olds.',
     whatChanged: 'Moved introductory coding sessions into trusted local community halls, increasing attendance by 65%.',
-    region: 'north'
+    region: 'west'
   },
   {
     id: 'evidence-yorkshire-sch-1',
@@ -2836,7 +2836,7 @@ export const YORKSHIRE_EVIDENCE_LEARNING: EvidenceLearning[] = [
     assignedTab: 'Post-16 Education and Training',
     description: 'Data showed a 28% drop-out rate among Dewsbury students commuting to Huddersfield technical workshops due to bus fares.',
     whatChanged: 'Introduced a subsidized college bus pass, restoring attendance rates to 94%.',
-    region: 'north'
+    region: 'west'
   },
   {
     id: 'evidence-yorkshire-etw-1',
@@ -2854,7 +2854,7 @@ export const YORKSHIRE_EVIDENCE_LEARNING: EvidenceLearning[] = [
     assignedTab: 'In Work',
     description: 'Collaborating with 8 financial firms to replace computer science degree requirements with practical skill tests.',
     whatChanged: 'Applicant diversity increased by 210%, with 82% of non-graduate recruits passing 6-month probation with high performance ratings.',
-    region: 'north'
+    region: 'west'
   },
   {
     id: 'evidence-yorkshire-re-1',
@@ -2863,6 +2863,6 @@ export const YORKSHIRE_EVIDENCE_LEARNING: EvidenceLearning[] = [
     assignedTab: 'Re-entry',
     description: 'Partnered with social housing retrofit contractors to remove criminal conviction checkboxes on initial application forms.',
     whatChanged: 'Placed 42 young adult re-entrants into steady employment with 0 re-offending recorded over 12 months.',
-    region: 'north'
+    region: 'west'
   }
 ];
