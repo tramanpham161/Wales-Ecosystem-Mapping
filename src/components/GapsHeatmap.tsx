@@ -212,33 +212,18 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
     if (!gapsMarkersGroupRef.current) return;
     gapsMarkersGroupRef.current.clearLayers();
 
-    // Note: Organisation spots are omitted from the heatmap per requirements. Spots are only for Requests, Offers, Collaborations.
+    // Only show spots for Requests and Activities per requirements
+    const listToPlot = (filteredGapsOffers || []).filter(item => 
+      item.type === 'Request' || item.type === 'Gap' || item.type === 'Offer' || item.type === 'Collaboration' || item.type === 'Activity' || item.type === 'Project'
+    );
 
-    const listToPlot = (filteredGapsOffers || []).filter(item => item.type !== 'Gap');
     listToPlot.forEach((item) => {
       const coords = getGapOfferCoordinates(item, organizations || [], isYorkshire);
       
-      let markerColor = '#51615a';
-      let iconSymbol = '•';
-      let typeLabel = 'Insight';
-      
-      if (item.type === 'Gap') {
-        markerColor = '#DC2626';
-        iconSymbol = '!';
-        typeLabel = 'Project';
-      } else if (item.type === 'Offer') {
-        markerColor = '#0D9488';
-        iconSymbol = '★';
-        typeLabel = 'Offer';
-      } else if (item.type === 'Request') {
-        markerColor = '#D97706';
-        iconSymbol = '?';
-        typeLabel = 'Request';
-      } else if (item.type === 'Collaboration') {
-        markerColor = '#2563EB';
-        iconSymbol = 'C';
-        typeLabel = 'Collaboration';
-      }
+      const isRequest = item.type === 'Request' || item.type === 'Gap';
+      const markerColor = isRequest ? '#D97706' : '#0D9488';
+      const iconSymbol = isRequest ? '?' : '★';
+      const typeLabel = isRequest ? 'Request' : 'Activity';
 
       const size = 28;
       const customIcon = L.divIcon({
@@ -542,7 +527,7 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base font-bold text-[#1a2521]">Dual Perspective Ecosystem Mapping</h3>
+                <h3 className="text-base font-bold text-[#1a2521]">Ecosystem Heat Map ({isYorkshire ? 'Yorkshire' : 'Wales'})</h3>
                 {activeStage && (
                   <span className="px-2.5 py-0.5 rounded-full bg-[#29B6BD]/10 text-[#176e73] border border-[#29B6BD]/20 text-[10px] font-bold">
                     Stage: {activeStage}
@@ -550,33 +535,12 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
                 )}
               </div>
               <p className="text-[11px] text-[#51615a] mt-0.5">
-                Analyse spatial distribution across {isYorkshire ? 'Yorkshire' : 'Wales'} or explore systemic 3-criteria grids.
+                Analyse spatial distribution and local authority profiles across {isYorkshire ? 'Yorkshire' : 'Wales'}.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-            <div className="flex bg-[#F4F4F0] p-1 rounded-xl border border-[#e1e1db]">
-              <button
-                onClick={() => setActiveTab('map')}
-                className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === 'map' ? 'bg-[#29B6BD] text-white shadow-2xs' : 'text-[#51615a] hover:text-[#29B6BD]'
-                }`}
-              >
-                <MapPin className="w-3.5 h-3.5" />
-                <span>1. {isYorkshire ? 'Yorkshire' : 'Wales'} Regional Map</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('criteria')}
-                className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === 'criteria' ? 'bg-[#29B6BD] text-white shadow-2xs' : 'text-[#51615a] hover:text-[#29B6BD]'
-                }`}
-              >
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>2. 3-Criteria Grid Map</span>
-              </button>
-            </div>
-
             {onOpenAddGap && (
               <button
                 onClick={onOpenAddGap}
@@ -622,47 +586,14 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
             )}
           </div>
 
-          {activeTab === 'map' && (
-            <div className="flex items-center gap-1.5 bg-[#F4F4F0] border border-[#e1e1db] rounded-xl p-1 text-[10px]">
-              <span className="px-2 font-bold text-[#51615a] text-[9px] uppercase tracking-wider hidden sm:inline">Choropleth Layer:</span>
-              <button
-                onClick={() => setMapMetric('deprivation')}
-                className={`px-3 py-1 font-bold rounded-lg transition cursor-pointer ${
-                  mapMetric === 'deprivation' ? 'bg-[#29B6BD] text-white shadow-2xs' : 'text-[#51615a] hover:text-[#1a2521]'
-                }`}
-              >
-                ONS Deprivation Index
-              </button>
-              <button
-                onClick={() => setMapMetric('gap')}
-                className={`px-3 py-1 font-bold rounded-lg transition cursor-pointer ${
-                  mapMetric === 'gap' ? 'bg-[#29B6BD] text-white shadow-2xs' : 'text-[#51615a] hover:text-[#1a2521]'
-                }`}
-              >
-                Systemic Gap Index
-              </button>
-              <button
-                onClick={() => setMapMetric('struggle')}
-                className={`px-3 py-1 font-bold rounded-lg transition cursor-pointer ${
-                  mapMetric === 'struggle' ? 'bg-[#29B6BD] text-white shadow-2xs' : 'text-[#51615a] hover:text-[#1a2521]'
-                }`}
-              >
-                Struggle Level
-              </button>
-              <button
-                onClick={() => setMapMetric('help')}
-                className={`px-3 py-1 font-bold rounded-lg transition cursor-pointer ${
-                  mapMetric === 'help' ? 'bg-[#29B6BD] text-white shadow-2xs' : 'text-[#51615a] hover:text-[#1a2521]'
-                }`}
-              >
-                Help Received
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 bg-[#F4F4F0] border border-[#e1e1db] rounded-xl p-1.5 text-[11px] font-bold text-[#1a2521]">
+            <span className="text-[#51615a] text-[10px] uppercase tracking-wider">Choropleth Layer:</span>
+            <span className="px-2.5 py-0.5 bg-[#29B6BD] text-white rounded-lg text-xs font-bold shadow-2xs">ONS Deprivation Index</span>
+          </div>
         </div>
       </div>
 
-      {activeTab === 'map' && (() => {
+      {(() => {
         const laData = isYorkshire ? YORKSHIRE_LOCAL_AUTHORITIES_DATA : WALES_LOCAL_AUTHORITIES_DATA;
         const allLAs = Object.values(laData);
         const selectedLA = laData[selectedLAName] || allLAs[0];
@@ -683,6 +614,48 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
                     className="w-full h-[360px] rounded-xl border border-gray-200 shadow-inner overflow-hidden z-10" 
                     style={{ minHeight: '360px' }}
                   />
+
+                  {/* ONS Choropleth & Spot Legend */}
+                  <div className="mt-4 pt-3 border-t border-[#e1e1db] space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px]">
+                      <div>
+                        <span className="font-bold text-[#1a2521] uppercase tracking-wider text-[10px] block mb-1">
+                          Map Spots Legend:
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#F4F4F0] border border-[#e1e1db] rounded-lg font-bold text-[#1a2521] text-[11px]">
+                            <span className="w-4 h-4 rounded-full bg-[#D97706] text-white flex items-center justify-center text-[10px] font-black">?</span>
+                            <span>Requests</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#F4F4F0] border border-[#e1e1db] rounded-lg font-bold text-[#1a2521] text-[11px]">
+                            <span className="w-4 h-4 rounded-full bg-[#0D9488] text-white flex items-center justify-center text-[10px] font-black">★</span>
+                            <span>Activities</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#F4F4F0] border border-[#e1e1db] rounded-lg font-bold text-[#1a2521] text-[11px]">
+                            <span className="relative flex h-2.5 w-2.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
+                            </span>
+                            <span>Urgent Priority</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="sm:text-right">
+                        <span className="font-bold text-[#1a2521] uppercase tracking-wider text-[10px] block mb-1">
+                          Household Deprivation:
+                        </span>
+                        <div className="flex items-center gap-1 sm:justify-end">
+                          <span className="w-3.5 h-3.5 rounded-xs bg-[#29B6BD]" title="Lowest Deprivation" />
+                          <span className="w-3.5 h-3.5 rounded-xs bg-[#06b6d4]" />
+                          <span className="w-3.5 h-3.5 rounded-xs bg-[#eab308]" />
+                          <span className="w-3.5 h-3.5 rounded-xs bg-[#f97316]" />
+                          <span className="w-3.5 h-3.5 rounded-xs bg-[#be123c]" title="Highest Deprivation" />
+                          <span className="text-[10px] text-[#51615a] font-semibold ml-1">Low → High</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="lg:col-span-6 flex flex-col justify-between bg-[#F4F4F0]/30 rounded-2xl border p-6 border-l-4 border-l-[#29B6BD] border-[#e1e1db]">
@@ -798,61 +771,6 @@ export const GapsHeatmap: React.FC<GapsHeatmapProps> = ({
           </div>
         );
       })()}
-
-      {activeTab === 'criteria' && (
-        <div id="gradient-criteria-heatmap-view" className="bg-white rounded-2xl border border-[#e1e1db] overflow-hidden shadow-xs">
-          <div className="bg-[#1a2521] px-6 py-5 text-white border-b border-[#e1e1db]/10">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
-              <h4 className="text-base font-bold tracking-tight">Systemic Alignment Grid Heat Map</h4>
-            </div>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-7 flex flex-col justify-between">
-                <div className="relative border border-[#e1e1db] rounded-2xl overflow-hidden h-[25rem] sm:h-[30rem] shadow-xs bg-slate-900">
-                  <div 
-                    className="absolute inset-0 select-none pointer-events-none"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(222, 107, 107, 0.95) 0%, rgba(229, 169, 115, 0.9) 30%, rgba(230, 198, 135, 0.85) 55%, rgba(99, 179, 143, 0.8) 75%, rgba(95, 170, 179, 0.85) 100%)'
-                    }}
-                  />
-                  <div className="absolute left-16 right-8 top-8 bottom-12">
-                    {activities.map((act) => {
-                      const isSelected = selectedActivityId === act.id;
-                      return (
-                        <button
-                          key={act.id}
-                          onClick={() => setSelectedActivityId(act.id)}
-                          style={{
-                            left: `${act.probability}%`,
-                            top: `${100 - act.impact}%`,
-                            transform: 'translate(-50%, -50%)',
-                          }}
-                          className={`absolute flex items-center gap-3 group cursor-pointer transition-all duration-300 ${
-                            isSelected ? 'z-30 scale-110' : 'z-10 hover:z-20 hover:scale-105'
-                          }`}
-                        >
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center border bg-white/20 border-white/35">
-                            <div className="w-3.5 h-3.5 rounded-full shadow-sm" style={{ backgroundColor: act.color }} />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 flex flex-col justify-between bg-[#F4F4F0]/30 rounded-2xl border border-[#e1e1db] p-6">
-                <div className="space-y-4">
-                  <h5 className="text-sm font-extrabold text-[#1a2521]">{selectedActivity.label}</h5>
-                  <p className="text-[11px] text-[#51615a]">{selectedActivity.description}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
