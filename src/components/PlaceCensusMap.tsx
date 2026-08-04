@@ -25,27 +25,6 @@ interface LocalAuthorityData {
 
 const YORKSHIRE_DISTRICTS: LocalAuthorityData[] = [
   {
-    id: 'hull',
-    name: 'Kingston upon Hull',
-    region: 'East Yorkshire & Hull',
-    onsCode: 'E06000010',
-    deprivedOneDimPercent: 39.8,
-    deprivedTwoDimPercent: 18.2,
-    deprivedThreeDimPercent: 5.6,
-    notDeprivedPercent: 36.4,
-    educationDeprivationPercent: 24.1,
-    employmentDeprivationPercent: 21.5,
-    healthDeprivationPercent: 22.8,
-    youthNeetPercent: 7.5,
-    skillsDeficitPercent: 29.2,
-    housingDeprivedPercent: 18.9,
-    population: '267,100',
-    keyChallenge: 'Coastal and estuary isolation, high NEET rate in Orchard Park and Bransholme, skill transition to offshore wind energy.',
-    mappedInitiativesCount: 7,
-    openGapsCount: 19,
-    highlightedPriority: 'Humber clean energy apprenticeships, digital inclusion hubs, and maritime engineering traineeships.'
-  },
-  {
     id: 'bradford',
     name: 'Bradford',
     region: 'West Yorkshire',
@@ -214,27 +193,6 @@ const YORKSHIRE_DISTRICTS: LocalAuthorityData[] = [
     highlightedPriority: 'Calder Valley youth collective mobile advice vans, homework device loans, and peer mental health.'
   },
   {
-    id: 'eastriding',
-    name: 'East Riding of Yorkshire',
-    region: 'East Yorkshire & Hull',
-    onsCode: 'E06000011',
-    deprivedOneDimPercent: 31.8,
-    deprivedTwoDimPercent: 11.9,
-    deprivedThreeDimPercent: 2.8,
-    notDeprivedPercent: 53.5,
-    educationDeprivationPercent: 16.8,
-    employmentDeprivationPercent: 13.9,
-    healthDeprivationPercent: 16.4,
-    youthNeetPercent: 4.1,
-    skillsDeficitPercent: 19.8,
-    housingDeprivedPercent: 12.6,
-    population: '343,200',
-    keyChallenge: 'Rural and coastal transport gaps in Bridlington and Hornsea; seasonal youth employment volatility.',
-    mappedInitiativesCount: 4,
-    openGapsCount: 10,
-    highlightedPriority: 'Coastal green energy traineeships, agricultural tech apprenticeships, and mobile youth hubs.'
-  },
-  {
     id: 'leeds',
     name: 'Leeds',
     region: 'West Yorkshire',
@@ -254,27 +212,6 @@ const YORKSHIRE_DISTRICTS: LocalAuthorityData[] = [
     mappedInitiativesCount: 10,
     openGapsCount: 24,
     highlightedPriority: 'Leeds FinTech diversity alliance non-degree fast-track & Harehills community digital hub.'
-  },
-  {
-    id: 'york',
-    name: 'City of York',
-    region: 'North Yorkshire',
-    onsCode: 'E06000014',
-    deprivedOneDimPercent: 27.9,
-    deprivedTwoDimPercent: 9.8,
-    deprivedThreeDimPercent: 2.1,
-    notDeprivedPercent: 60.2,
-    educationDeprivationPercent: 13.9,
-    employmentDeprivationPercent: 11.8,
-    healthDeprivationPercent: 13.5,
-    youthNeetPercent: 3.5,
-    skillsDeficitPercent: 14.8,
-    housingDeprivedPercent: 14.2,
-    population: '202,800',
-    keyChallenge: 'High housing costs for young workers; pockets of hidden deprivation in Westfield and Clifton wards.',
-    mappedInitiativesCount: 5,
-    openGapsCount: 9,
-    highlightedPriority: 'York creative tech apprenticeships, affordable youth housing support, and rail innovation academy.'
   }
 ];
 
@@ -477,7 +414,7 @@ export const PlaceCensusMap: React.FC<PlaceCensusMapProps> = ({ placeName }) => 
 
       <p className="text-sm text-[#51615a] leading-relaxed">
         {isYorkshire 
-          ? 'ONS Census 2021 data shows that across South, West, North, and East Yorkshire & Hull, household deprivation in at least one dimension averages 34.5%. This choropleth maps local district deficits across all 13 Yorkshire local authority areas to align targeted accelerator interventions.'
+          ? 'ONS Census 2021 data shows that across South and West Yorkshire, household deprivation in at least one dimension averages 34.5%. This choropleth maps local district deficits across West Yorkshire and South Yorkshire local authority areas to align targeted accelerator interventions.'
           : 'Official ONS Census indicators highlight structural household deprivation across South East Wales, the Valleys, and rural Gwynedd. We align place-based funding directly to district need metrics.'
         }
       </p>
