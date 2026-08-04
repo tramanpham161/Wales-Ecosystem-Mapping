@@ -57,6 +57,8 @@ import { ProjectShowcaseCarousel } from './components/ProjectShowcaseCarousel';
 import { WorkDiagram } from './components/WorkDiagram';
 import { PlaceCensusMap } from './components/PlaceCensusMap';
 import { YORKSHIRE_ORGANIZATIONS, YORKSHIRE_GAPS_OFFERS, YORKSHIRE_COMMITMENTS, YORKSHIRE_EVIDENCE_LEARNING } from './dataYorkshire';
+import { YORKSHIRE_LOCAL_AUTHORITIES_DATA } from './yorkshireLocalAuthoritiesData';
+import { WALES_LOCAL_AUTHORITIES_DATA } from './walesLocalAuthoritiesData';
 import { 
   getDbStatus, 
   fetchOrganisations, 
@@ -375,6 +377,23 @@ const DEMO_PROFILES: UserProfile[] = [
   }
 ];
 
+const getOahaOrgColorStyle = (name?: string) => {
+  if (!name) return '#176e73';
+  const oahaColors = [
+    '#176e73', // OAHA Dark Teal
+    '#0284c7', // OAHA Sky Blue
+    '#29B6BD', // OAHA Bright Cyan
+    '#16a34a', // OAHA Green
+    '#d97706', // OAHA Amber
+    '#0d9488', // OAHA Teal Green
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return oahaColors[Math.abs(hash) % oahaColors.length];
+};
+
 type AlphaTab = 'overview' | 'journey' | 'directory' | 'gaps_offers' | 'commitments' | 'evidence_learning';
 
 export default function App() {
@@ -618,6 +637,7 @@ export default function App() {
   // Leaflet references
   const mapRef = useRef<any>(null);
   const markersGroupRef = useRef<any>(null);
+  const geoJsonLayerRef = useRef<any>(null);
   const markerObjectsRef = useRef<{ [id: string]: any }>({});
 
   // 1. Check Database Status and Load All Data on Mount
@@ -835,23 +855,28 @@ export default function App() {
 
   // Stats Counters
   const stats = useMemo(() => {
-    const totalCount = organizations.length;
+    const totalCount = baseOrganizations.length;
     const tabCounts = SYSTEMIC_TABS.reduce((acc, tab) => {
-      acc[tab.id] = organizations.filter(o => o.assignedTab === tab.id).length;
+      acc[tab.id] = baseOrganizations.filter(o => {
+        const stages = (o.journeyStages && o.journeyStages.length > 0)
+          ? o.journeyStages
+          : (o.assignedTab ? [o.assignedTab] : []);
+        return stages.some(s => s === tab.id) || o.assignedTab === tab.id;
+      }).length;
       return acc;
     }, {} as { [key in FrictionPoint]: number });
 
-    const totalReferrals = organizations.filter(o => o.lookingFor === 'Referrals').length;
-    const totalPartners = organizations.filter(o => o.lookingFor === 'Employer Partners').length;
+    const totalReferrals = baseOrganizations.filter(o => o.lookingFor === 'Referrals').length;
+    const totalPartners = baseOrganizations.filter(o => o.lookingFor === 'Employer Partners').length;
 
     return { totalCount, tabCounts, totalReferrals, totalPartners };
-  }, [organizations]);
+  }, [baseOrganizations]);
 
   // Partnership info helper for the detailed view of gap, offer, request
   const detailedGapPartnershipInfo = useMemo(() => {
     if (!detailedGap) return null;
     const linkedOrg = detailedGap.organization 
-      ? organizations.find(o => o.name && o.name.toLowerCase().trim() === detailedGap.organization.toLowerCase().trim()) 
+      ? baseOrganizations.find(o => o.name && o.name.toLowerCase().trim() === detailedGap.organization.toLowerCase().trim()) 
       : null;
     const isOahaPartner = !!detailedGap.workingWithOaha || !!(linkedOrg && linkedOrg.workingWithOaha);
 
@@ -928,6 +953,116 @@ export default function App() {
       }, 100);
     }
   }, [currentAlphaTab]);
+
+  // Load & render deprivation choropleth overlay on the Directory map
+  useEffect(() => {
+    const L = (window as any).L;
+    if (!L || !mapRef.current) return;
+
+    const place = selectedPlace === 'yorkshire' ? 'yorkshire' : 'wales';
+    const jsonUrl = place === 'yorkshire'
+      ? (import.meta.env.BASE_URL + 'yorkshire_local_authorities.json')
+      : (import.meta.env.BASE_URL + 'wales_local_authorities.json');
+
+    let isMounted = true;
+
+    const getLAData = (rawName: string) => {
+      const laData: Record<string, any> = place === 'yorkshire' ? YORKSHIRE_LOCAL_AUTHORITIES_DATA : WALES_LOCAL_AUTHORITIES_DATA;
+      const clean = (rawName || '').trim();
+      if (laData[clean]) return { name: clean, data: laData[clean] };
+
+      if (clean.includes('Kirklees')) return { name: 'Kirklees', data: laData['Kirklees'] };
+      if (clean.includes('Calderdale')) return { name: 'Calderdale', data: laData['Calderdale'] };
+      if (clean.includes('Bradford')) return { name: 'Bradford', data: laData['Bradford'] };
+      if (clean.includes('Leeds')) return { name: 'Leeds', data: laData['Leeds'] };
+      if (clean.includes('Sheffield')) return { name: 'Sheffield', data: laData['Sheffield'] };
+      if (clean.includes('Wakefield')) return { name: 'Wakefield', data: laData['Wakefield'] };
+      if (clean.includes('Barnsley')) return { name: 'Barnsley', data: laData['Barnsley'] };
+      if (clean.includes('Doncaster')) return { name: 'Doncaster', data: laData['Doncaster'] };
+      if (clean.includes('Rotherham')) return { name: 'Rotherham', data: laData['Rotherham'] };
+
+      return { name: clean, data: undefined };
+    };
+
+    fetch(jsonUrl)
+      .then(res => res.json())
+      .then(geoData => {
+        if (!isMounted || !mapRef.current) return;
+
+        if (geoJsonLayerRef.current) {
+          try {
+            mapRef.current.removeLayer(geoJsonLayerRef.current);
+          } catch (e) {
+            // ignore
+          }
+          geoJsonLayerRef.current = null;
+        }
+
+        const geoLayer = L.geoJSON(geoData, {
+          filter: (feature: any) => {
+            if (place === 'yorkshire') {
+              const rawName = (feature.properties?.LAD24NM || feature.properties?.LAD22NM || feature.properties?.LAD13NM || feature.properties?.name || '').trim();
+              const { data } = getLAData(rawName);
+              if (!data) return false;
+            }
+            return true;
+          },
+          style: (feature: any) => {
+            const rawName = (feature.properties?.LAD24NM || feature.properties?.LAD22NM || feature.properties?.LAD13NM || feature.properties?.name || '').trim();
+            const { data } = getLAData(rawName);
+
+            let fillColor = '#94a3b8';
+            const pct = data?.deprivationPct || 35;
+            if (place === 'yorkshire') {
+              if (pct >= 38) fillColor = '#be123c';
+              else if (pct >= 35) fillColor = '#f97316';
+              else if (pct >= 32) fillColor = '#eab308';
+              else if (pct >= 29) fillColor = '#06b6d4';
+              else fillColor = '#29B6BD';
+            } else {
+              if (pct >= 58) fillColor = '#be123c';
+              else if (pct >= 54) fillColor = '#f97316';
+              else if (pct >= 50) fillColor = '#eab308';
+              else if (pct >= 45) fillColor = '#06b6d4';
+              else fillColor = '#29B6BD';
+            }
+
+            return {
+              fillColor,
+              weight: 1.2,
+              opacity: 1,
+              color: '#ffffff',
+              fillOpacity: 0.65
+            };
+          },
+          onEachFeature: (feature: any, layer: any) => {
+            const rawName = (feature.properties?.LAD24NM || feature.properties?.LAD22NM || feature.properties?.LAD13NM || feature.properties?.name || '').trim();
+            const { name, data } = getLAData(rawName);
+            if (data) {
+              layer.bindTooltip(`
+                <div class="px-2 py-1 font-sans text-xs">
+                  <p class="font-bold text-[#1a2521] m-0">${name}</p>
+                  <p class="text-[10px] text-[#51615a] m-0">Deprivation Rate: <strong>${data.deprivationPct}%</strong></p>
+                </div>
+              `, { sticky: true, opacity: 0.95 });
+            }
+          }
+        }).addTo(mapRef.current);
+
+        if (geoLayer.bringToBack) {
+          geoLayer.bringToBack();
+        }
+
+        geoJsonLayerRef.current = geoLayer;
+      })
+      .catch(err => {
+        console.error("Error loading deprivation GeoJSON for directory map:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedPlace]);
 
   // Global click callback for map popup
   useEffect(() => {
@@ -1057,7 +1192,8 @@ export default function App() {
         duration: 0.8
       });
     } else {
-      mapRef.current.setView([52.25, -3.8], 7.5, {
+      const defaultCenter = selectedPlace === 'yorkshire' ? [53.6, -1.5] : [52.25, -3.8];
+      mapRef.current.setView(defaultCenter, 7.5, {
         animate: true,
         duration: 0.8
       });
@@ -2764,7 +2900,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
 
             {/* MAP VISUALIZATION BLOCK WITH INTEGRATED DUAL PERSPECTIVE & MAP FILTERS */}
             <GapsHeatmap 
-              gapsOffers={gapsOffers}
+              gapsOffers={baseGapsOffers}
               filteredGapsOffers={filteredGapsOffers}
               organizations={filteredOrganizations}
               selectedRegionFilter={selectedRegionFilter}
@@ -2822,7 +2958,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                       <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider leading-tight">Active Gaps</p>
                     </div>
                     <p className="text-xl font-extrabold text-[#3EB049] mt-1">
-                      {gapsOffers.filter(g => (activeTab === 'All' || g.assignedTab === activeTab) && g.type === 'Gap').length}
+                      {baseGapsOffers.filter(g => (activeTab === 'All' || g.assignedTab === activeTab) && g.type === 'Gap').length}
                     </p>
                   </div>
 
@@ -2831,7 +2967,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                       <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider leading-tight">Active Offers</p>
                     </div>
                     <p className="text-xl font-extrabold text-[#F89E1B] mt-1">
-                      {gapsOffers.filter(g => (activeTab === 'All' || g.assignedTab === activeTab) && g.type === 'Offer').length}
+                      {baseGapsOffers.filter(g => (activeTab === 'All' || g.assignedTab === activeTab) && g.type === 'Offer').length}
                     </p>
                   </div>
 
@@ -2840,7 +2976,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                       <p className="text-[10px] font-medium text-[#51615a] uppercase tracking-wider leading-tight">Commitments</p>
                     </div>
                     <p className="text-xl font-extrabold text-[#888E8F] mt-1">
-                      {commitments.filter(c => activeTab === 'All' || c.assignedTab === activeTab).length}
+                      {baseCommitments.filter(c => activeTab === 'All' || c.assignedTab === activeTab).length}
                     </p>
                   </div>
                 </div>
@@ -2967,11 +3103,11 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                                   <p className="font-bold text-[#1a2521] text-xs">{item.title}</p>
                                   <p className="text-[10px] text-[#51615a] line-clamp-1">{item.content}</p>
                                 </td>
-                                <td className="p-3 whitespace-nowrap text-[#1a2521] font-medium">
+                                <td className="p-3 whitespace-nowrap font-bold" style={{ color: getOahaOrgColorStyle(item.organization) }}>
                                   {item.organization || 'Individual partner'}
                                 </td>
                                 <td className="p-3 whitespace-nowrap text-[10px] text-[#51615a]">
-                                  <span>📍 {itemRegion ? itemRegion.toUpperCase() : 'ALL'} WALES</span>
+                                  <span>📍 {itemRegion ? itemRegion.toUpperCase() : 'ALL'} {selectedPlace === 'yorkshire' ? 'YORKSHIRE' : 'WALES'}</span>
                                   <span className="block text-[9px] text-gray-400">Stage: {item.assignedTab}</span>
                                 </td>
                                 <td className="p-3 whitespace-nowrap text-right">
@@ -3007,7 +3143,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                           const itemCategory = item.category || getCategoryForGapOffer(item);
                           const itemUrgency = item.urgency || getUrgencyForGapOffer(item);
                           const itemRegion = item.region || getRegionForGapOffer(item);
-                          const isOahaPartner = !!item.workingWithOaha || (!!item.organization && organizations.some(o => o.name && o.name.toLowerCase() === item.organization.toLowerCase() && o.workingWithOaha));
+                          const isOahaPartner = !!item.workingWithOaha || (!!item.organization && baseOrganizations.some(o => o.name && o.name.toLowerCase() === item.organization.toLowerCase() && o.workingWithOaha));
 
                           let catColor = 'bg-slate-50 border-slate-200 text-slate-700';
                           if (itemCategory === 'resource') catColor = 'bg-indigo-50 border-indigo-200 text-indigo-700';
@@ -3052,7 +3188,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                                 <div className="space-y-1">
                                   {itemRegion && (
                                     <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 uppercase tracking-wide">
-                                      📍 {itemRegion.toUpperCase()} WALES
+                                      📍 {itemRegion.toUpperCase()} {selectedPlace === 'yorkshire' ? 'YORKSHIRE' : 'WALES'}
                                     </span>
                                   )}
                                   <h4 className="text-xs font-bold text-[#1a2521] leading-snug">{item.title}</h4>
@@ -3066,7 +3202,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                               <div className="pt-3 border-t border-[#e1e1db] flex items-center justify-between text-[10px] text-[#51615a]">
                                 <div>
                                   <div className="flex items-center gap-1">
-                                    <p className="font-bold text-[#1a2521]">{item.organization || 'Individual partner'}</p>
+                                    <p className="font-bold text-xs" style={{ color: getOahaOrgColorStyle(item.organization) }}>{item.organization || 'Individual partner'}</p>
                                     {isOahaPartner && (
                                       <span className="inline-flex items-center gap-0.5 text-[8px] bg-amber-100 text-[#986430] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
                                         ★ OAHA Partner
@@ -3087,7 +3223,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
 
                                   {item.contactEmail && (
                                     <button
-                                      onClick={() => handleOpenContact({ id: 'org-gap-relay', name: item.organization || 'Partner' } as any, `Hi ${item.submittedBy}, I saw your ${item.type} on the Wales Ecosystem Mapping platform: "${item.title}". We want to collaborate.`)}
+                                      onClick={() => handleOpenContact({ id: 'org-gap-relay', name: item.organization || 'Partner' } as any, `Hi ${item.submittedBy}, I saw your ${item.type} on the ${selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'} Ecosystem Mapping platform: "${item.title}". We want to collaborate.`)}
                                       className="text-[#29B6BD] hover:underline font-bold flex items-center gap-0.5 cursor-pointer border-l border-gray-200 pl-2"
                                     >
                                       <Mail className="w-3 h-3" />
@@ -3126,51 +3262,95 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
         <div className={currentAlphaTab === 'directory' ? 'block' : 'hidden'}>
           <div className="space-y-6 animate-fadeIn">
             
-            {/* Interactive Stage selector inside Directory */}
-            <div className="bg-white rounded-2xl border border-[#e1e1db] p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h3 className="text-xs font-bold text-[#51615a] uppercase tracking-wide">Filter Directory by Stage</h3>
-                <div className="flex flex-wrap gap-1.5 mt-2">
+            {/* Interactive 6 Stage Flow selector inside Directory */}
+            <div className="bg-white rounded-2xl border border-[#e1e1db] p-5 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold text-[#1a2521] flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-[#29B6BD]" />
+                    <span>Filter Organisations by Stage & Thematic Area</span>
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setIsAddOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-[#29B6BD] hover:bg-[#1d8e93] text-xs font-bold text-white flex items-center gap-1.5 shadow-sm transition duration-150 cursor-pointer self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4 text-white" />
+                  <span>Add Mapped Initiative</span>
+                </button>
+              </div>
+
+              <LearnerJourneyFlow
+                activeTab={activeTab}
+                onTabSelect={(tabId) => {
+                  setActiveTab(tabId);
+                  setSelectedOrgId(null);
+                  setSectorFilter('All');
+                  setLookingForFilter('All');
+                  setSearchQuery('');
+                }}
+                tabColorHex={tabColorHex}
+              />
+
+              {/* Thematic Area Filter under Stage cards */}
+              <div className="pt-3.5 border-t border-[#e1e1db] space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-[#51615a] uppercase tracking-wider">
+                    Filter by Thematic Area:
+                  </span>
+                  {thematicFilter !== 'All' && (
+                    <button
+                      onClick={() => setThematicFilter('All')}
+                      className="text-xs text-[#29B6BD] hover:underline font-bold cursor-pointer"
+                    >
+                      Reset Thematic Filter
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
                   <button
-                    key="All"
-                    onClick={() => {
-                      setActiveTab('All');
-                      setSelectedOrgId(null);
-                    }}
-                    className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition cursor-pointer ${
-                      activeTab === 'All'
-                        ? 'bg-[#29B6BD] text-white border-[#29B6BD]'
-                        : 'bg-white hover:bg-gray-50 text-[#51615a] border-[#e1e1db]'
+                    onClick={() => setThematicFilter('All')}
+                    className={`px-2.5 py-1 text-xs rounded-lg font-medium transition cursor-pointer border ${
+                      thematicFilter === 'All'
+                        ? 'bg-[#176e73] text-white border-[#176e73] font-bold shadow-2xs'
+                        : 'bg-gray-50 hover:bg-gray-100 text-[#51615a] border-[#e1e1db]'
                     }`}
                   >
-                    All Stages
+                    All Areas
                   </button>
-                  {SYSTEMIC_TABS.map((tab) => (
+                  {[
+                    'Careers',
+                    'Employability',
+                    'Skills',
+                    'Youth voice',
+                    'Mentoring',
+                    'Enterprise',
+                    'Apprenticeships',
+                    'Community development',
+                    'Inclusive growth',
+                    'Social mobility',
+                    'Family support',
+                    'Financial wellbeing',
+                    'Digital inclusion',
+                    'Volunteering',
+                    'Employer engagement',
+                    'Social value',
+                    'Mental wellbeing'
+                  ].map((area) => (
                     <button
-                      key={tab.id}
-                      onClick={() => {
-                        setActiveTab(tab.id);
-                        setSelectedOrgId(null);
-                      }}
-                      className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition cursor-pointer ${
-                        activeTab === tab.id
-                          ? 'bg-[#29B6BD] text-white border-[#29B6BD]'
+                      key={area}
+                      onClick={() => setThematicFilter(thematicFilter === area ? 'All' : area)}
+                      className={`px-2.5 py-1 text-xs rounded-lg font-medium transition cursor-pointer border ${
+                        thematicFilter === area
+                          ? 'bg-[#29B6BD] text-white border-[#29B6BD] font-bold shadow-2xs'
                           : 'bg-white hover:bg-gray-50 text-[#51615a] border-[#e1e1db]'
                       }`}
                     >
-                      {tab.label}
+                      {area}
                     </button>
                   ))}
                 </div>
               </div>
-
-              <button
-                onClick={() => setIsAddOpen(true)}
-                className="px-4 py-2 rounded-xl bg-[#29B6BD] hover:bg-[#1d8e93] text-xs font-bold text-white flex items-center gap-1.5 shadow-sm transition duration-150 cursor-pointer"
-              >
-                <Plus className="w-4 h-4 text-white" />
-                <span>Add Mapped Initiative</span>
-              </button>
             </div>
 
             {/* Split Map & List layout */}
@@ -3184,12 +3364,6 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#e1e1db] shadow-xs text-[11px] flex items-center gap-2 text-[#1a2521]">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: activeColorHex }}></span>
                     <span>Plotting <strong>{filteredOrganizations.length}</strong> pins in {selectedPlace === 'yorkshire' ? 'Yorkshire' : 'Wales'}</span>
-                  </div>
-
-                  <div className="absolute top-3 right-3 z-[1000] hidden sm:flex items-center gap-2">
-                    <span className="text-[10px] text-[#51615a] bg-white/95 border border-[#e1e1db] px-2.5 py-1.5 rounded-xl shadow-xs font-medium">
-                      Sector: Tech (T) | Green (G) | Creative (C) | Foundational (F)
-                    </span>
                   </div>
 
                   <div id="wales-leaflet-map" className="w-full h-full min-h-[350px]" style={{ touchAction: 'none' }} />
@@ -3316,34 +3490,6 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-[#51615a] uppercase">Thematic Area</label>
-                      <select
-                        value={thematicFilter}
-                        onChange={(e) => setThematicFilter(e.target.value)}
-                        className="w-full mt-1 px-2 py-1.5 text-xs border border-[#e1e1db] rounded-lg focus:outline-none focus:border-[#29B6BD] bg-white"
-                      >
-                        <option value="All">All Thematic Areas</option>
-                        <option value="Careers">Careers</option>
-                        <option value="Employability">Employability</option>
-                        <option value="Skills">Skills</option>
-                        <option value="Youth voice">Youth voice</option>
-                        <option value="Mentoring">Mentoring</option>
-                        <option value="Enterprise">Enterprise</option>
-                        <option value="Apprenticeships">Apprenticeships</option>
-                        <option value="Community development">Community development</option>
-                        <option value="Inclusive growth">Inclusive growth</option>
-                        <option value="Social mobility">Social mobility</option>
-                        <option value="Family support">Family support</option>
-                        <option value="Financial wellbeing">Financial wellbeing</option>
-                        <option value="Digital inclusion">Digital inclusion</option>
-                        <option value="Volunteering">Volunteering</option>
-                        <option value="Employer engagement">Employer engagement</option>
-                        <option value="Social value">Social value</option>
-                        <option value="Mental wellbeing">Mental wellbeing</option>
-                      </select>
-                    </div>
-
-                    <div>
                       <label className="text-[10px] font-bold text-[#51615a] uppercase">Looking For</label>
                       <select
                         value={lookingForFilter}
@@ -3403,7 +3549,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <h4 className="text-xs font-bold text-[#1a2521] leading-tight">{org.name}</h4>
+                            <h4 className="text-xs font-bold leading-tight" style={{ color: getOahaOrgColorStyle(org.name) }}>{org.name}</h4>
                             <p className="text-[10px] text-[#51615a] mt-0.5">{org.location}</p>
                           </div>
                           {org.workingWithOaha && (
@@ -3525,7 +3671,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                         return (
                           <tr key={item.id} className="hover:bg-slate-50/50 transition">
                             <td className="p-4 font-semibold text-[#1a2521] max-w-xs">{item.title}</td>
-                            <td className="p-4 text-[#51615a]">{item.partnerName}</td>
+                            <td className="p-4 font-bold" style={{ color: getOahaOrgColorStyle(item.partnerName) }}>{item.partnerName}</td>
                             <td className="p-4 text-[#1a2521] font-medium">{item.owner || '—'}</td>
                             <td className="p-4 text-[#51615a] whitespace-nowrap">{item.timescale}</td>
                             <td className="p-4">
@@ -4000,10 +4146,8 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   {selectedPlace === 'yorkshire' ? (
                     <>
                       <option value="">Auto-Detect from Text / General Yorkshire</option>
-                      <option value="west">West Yorkshire (Bradford, Leeds, Kirklees, Wakefield)</option>
+                      <option value="west">West Yorkshire (Bradford, Leeds, Kirklees, Wakefield, Calderdale)</option>
                       <option value="south">South Yorkshire (Sheffield, Rotherham, Doncaster, Barnsley)</option>
-                      <option value="north">North Yorkshire</option>
-                      <option value="easthull">East Yorkshire & Hull</option>
                     </>
                   ) : (
                     <>
@@ -4368,7 +4512,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 <span className="text-[9px] uppercase font-bold tracking-wider text-[#176e73] bg-[#29B6BD]/10 px-2.5 py-1 rounded-md border border-[#29B6BD]/20">
                   {detailedOrg.sector} Focus
                 </span>
-                <h3 className="text-base font-bold text-[#1a2521] pt-1.5">{detailedOrg.name}</h3>
+                <h3 className="text-base font-bold pt-1.5" style={{ color: getOahaOrgColorStyle(detailedOrg.name) }}>{detailedOrg.name}</h3>
                 <p className="text-xs text-[#51615a] flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5" />
                   <span>{detailedOrg.address}</span>
@@ -4578,7 +4722,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   )}
                 </div>
                 <h3 className="text-base font-bold text-[#1a2521] leading-snug">{detailedGap.title}</h3>
-                <p className="text-[10px] text-gray-400 font-mono">Stage Fit: {detailedGap.assignedTab} Wales</p>
+                <p className="text-[10px] text-gray-400 font-mono">Stage Fit: {detailedGap.assignedTab} {(detailedGap.place || selectedPlace) === 'yorkshire' ? 'Yorkshire' : 'Wales'}</p>
               </div>
               <button 
                 onClick={() => setDetailedGap(null)} 
@@ -4628,7 +4772,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   <div className="space-y-2">
                     <h4 className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider">OAHA Partnership</h4>
                     <p className="text-[11px] leading-relaxed text-gray-400">
-                      Alignment status with the <strong className="text-[#1a2521]">One Wales One Health Alliance (OAHA)</strong> ecosystem framework.
+                      Alignment status with the <strong className="text-[#1a2521]">{(detailedGap.place || selectedPlace) === 'yorkshire' ? 'OAHA Yorkshire' : 'One Wales One Health Alliance (OAHA)'}</strong> ecosystem framework.
                     </p>
                   </div>
                   
@@ -4662,7 +4806,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                         <Info className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
                         <div className="text-[11px]">
                           <p className="font-bold text-[10px] uppercase tracking-wider text-gray-800">Not directly partnered with OAHA</p>
-                          <p className="text-gray-500 mt-0.5 leading-relaxed">Independent participant in the wider Wales employment ecosystem.</p>
+                          <p className="text-gray-500 mt-0.5 leading-relaxed">Independent participant in the wider {(detailedGap.place || selectedPlace) === 'yorkshire' ? 'Yorkshire' : 'Wales'} employment ecosystem.</p>
                         </div>
                       </div>
                     )}
@@ -4680,7 +4824,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 <button
                   onClick={() => {
                     const subject = `Inquiry: ${detailedGap.title}`;
-                    const body = `Hi ${detailedGap.submittedBy || 'Partner'},\n\nI saw your ${detailedGap.type} post: "${detailedGap.title}" on the Wales Ecosystem Mapping platform. I would love to connect and learn more about this.\n\nBest regards,\n[Your Name]`;
+                    const body = `Hi ${detailedGap.submittedBy || 'Partner'},\n\nI saw your ${detailedGap.type} post: "${detailedGap.title}" on the ${(detailedGap.place || selectedPlace) === 'yorkshire' ? 'Yorkshire' : 'Wales'} Ecosystem Mapping platform. I would love to connect and learn more about this.\n\nBest regards,\n[Your Name]`;
                     setDetailedGap(null);
                     handleOpenContact({ id: 'org-gap-relay', name: detailedGap.organization || 'Partner' } as any, body);
                   }}
