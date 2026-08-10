@@ -202,6 +202,87 @@ export function getUrgencyForGapOffer(item: any): 'urgent' | 'not urgent' {
   return 'not urgent';
 }
 
+export function getCallToActionForItem(item: any): { 
+  primarySupport: string; 
+  supportTypes: string[]; 
+  badgeBg: string; 
+  badgeText: string; 
+  badgeBorder: string; 
+  icon: string 
+} {
+  const text = `${item.title || ''} ${item.content || ''} ${item.category || ''} ${item.type || ''}`.toLowerCase();
+  
+  const supportTypes: string[] = [];
+  if (text.includes('volunteer') || text.includes('mentor') || text.includes('speaking') || text.includes('adviser') || text.includes('guide')) {
+    supportTypes.push('Volunteer & Mentor');
+  }
+  if (text.includes('host') || text.includes('work experience') || text.includes('placement') || text.includes('internship') || text.includes('job') || text.includes('shadowing') || text.includes('site visit')) {
+    supportTypes.push('Host Placements');
+  }
+  if (text.includes('fund') || text.includes('grant') || text.includes('sponsor') || text.includes('investment') || text.includes('finance') || text.includes('bursary')) {
+    supportTypes.push('Fund & Co-invest');
+  }
+  if (text.includes('refer') || text.includes('learner') || text.includes('youth') || text.includes('student') || text.includes('intake') || text.includes('enrolment')) {
+    supportTypes.push('Refer Learners');
+  }
+  if (text.includes('deliver') || text.includes('partner') || text.includes('workshop') || text.includes('training') || text.includes('collaborat') || text.includes('programme')) {
+    supportTypes.push('Deliver & Partner');
+  }
+
+  if (supportTypes.length === 0) {
+    if (item.type === 'Gap' || item.type === 'Request') {
+      supportTypes.push('Host Placements', 'Volunteer & Mentor');
+    } else if (item.type === 'Offer') {
+      supportTypes.push('Refer Learners', 'Deliver & Partner');
+    } else {
+      supportTypes.push('Deliver & Partner', 'Fund & Co-invest');
+    }
+  }
+
+  const primary = supportTypes[0];
+  const badgeBg = 'bg-white';
+  const badgeText = 'text-[#1a2521]';
+  const badgeBorder = 'border-[#d8d8d2]';
+  const icon = '⚡';
+
+  return {
+    primarySupport: primary,
+    supportTypes,
+    badgeBg,
+    badgeText,
+    badgeBorder,
+    icon
+  };
+}
+
+export function getFundingVisibilityAndRisk(item: any): {
+  fundingSource: string;
+  riskLevel: string;
+  riskBadgeClass: string;
+} {
+  const text = `${item.title || ''} ${item.content || ''} ${item.description || ''} ${item.type || ''} ${item.category || ''} ${item.organization || ''} ${item.partnerName || ''}`.toLowerCase();
+
+  let fundingSource = 'Government / Public Funding';
+  if (text.includes('charity') || text.includes('trust') || text.includes('foundation') || text.includes('lottery') || text.includes('grant') || text.includes('community') || text.includes('vcse')) {
+    fundingSource = 'Charitable / Trust Funding';
+  } else if (text.includes('employer') || text.includes('business') || text.includes('private') || text.includes('corporate') || text.includes('sponsor') || text.includes('industry')) {
+    fundingSource = 'Private / Employer Investment';
+  }
+
+  let riskLevel = 'Secure / Stable';
+  let riskBadgeClass = 'bg-[#f4f4f0] text-[#1a2521] border-[#d8d8d2]';
+
+  if (text.includes('gap') || text.includes('deficit') || text.includes('urgent') || text.includes('shortfall') || text.includes('barrier') || text.includes('risk') || text.includes('end of cycle') || text.includes('ending') || text.includes('at risk')) {
+    riskLevel = 'At Risk (End of Funding Cycle)';
+    riskBadgeClass = 'bg-rose-50 text-rose-800 border-rose-200';
+  } else if (text.includes('pilot') || text.includes('seeking') || text.includes('request') || text.includes('expansion') || text.includes('co-fund') || text.includes('challenge')) {
+    riskLevel = 'Medium Risk (Subject to Co-funding)';
+    riskBadgeClass = 'bg-amber-50 text-amber-800 border-amber-200';
+  }
+
+  return { fundingSource, riskLevel, riskBadgeClass };
+}
+
 export function generateCombinationsOfGapsOffers(): GapOfferRequest[] {
   const types: SubmissionType[] = ['Gap', 'Offer', 'Request', 'Collaboration'];
   const regions: ('north' | 'mid' | 'southwest' | 'southeast')[] = ['north', 'mid', 'southwest', 'southeast'];
@@ -444,6 +525,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [detailedOrg, setDetailedOrg] = useState<Organization | null>(null);
+  const [expandedActiveProg, setExpandedActiveProg] = useState(false);
   const [detailedGap, setDetailedGap] = useState<GapOfferRequest | null>(null);
 
   // Form State for Adding new Initiative (Directory view)
@@ -1134,26 +1216,44 @@ export default function App() {
         iconAnchor: [size / 2, size / 2]
       });
 
-      const marker = L.marker([org.latitude, org.longitude], { icon: customIcon })
-        .addTo(markersGroupRef.current);
+      const marker = L.marker([org.latitude, org.longitude], { 
+        icon: customIcon,
+        zIndexOffset: isSelected ? 10000 : 0
+      }).addTo(markersGroupRef.current);
 
       markerObjectsRef.current[org.id] = marker;
 
+      if (isSelected) {
+        marker.setZIndexOffset(10000);
+        if (typeof marker.bringToFront === 'function') {
+          marker.bringToFront();
+        }
+      }
+
       // Popup layout
       const popupHtml = `
-        <div class="p-3.5 font-sans w-52 space-y-2 text-left">
+        <div class="p-3.5 font-sans w-56 space-y-2 text-left">
+          <div class="flex items-center justify-between border-b border-[#e1e1db] pb-1 mb-1">
+            <span class="text-[9px] font-extrabold uppercase tracking-wider ${isSelected ? 'text-[#176e73] bg-teal-50 border-teal-200' : 'text-gray-700 bg-gray-50 border-gray-200'} px-1.5 py-0.5 rounded border">
+              📍 ${isSelected ? 'Selected Organisation' : 'Ecosystem Partner'}
+            </span>
+            <span class="text-[9px] font-bold text-[#51615a]">${org.capacityStatus || 'Active'}</span>
+          </div>
           <div>
-            <h3 class="text-xs font-bold text-[#1a2521] leading-snug break-words m-0">${org.name}</h3>
+            <h3 class="text-xs font-extrabold text-[#1a2521] leading-snug break-words m-0">${org.name}</h3>
             <p class="text-[10px] text-[#51615a] m-0 mt-1 flex items-center gap-1.5">
               <span class="inline-block w-2 h-2 rounded-full shrink-0" style="background-color: ${markerColor}"></span>
-              <span class="truncate font-medium">${org.sector} | ${org.location}</span>
+              <span class="truncate font-semibold">${org.sector} | ${org.location}</span>
+            </p>
+            <p class="text-[10px] text-[#1a2521] m-0 mt-1.5 line-clamp-2 font-medium bg-[#f8f8f6] p-1.5 rounded border border-[#e1e1db]">
+              "${org.currentProject}"
             </p>
           </div>
-          <div class="pt-0.5 flex flex-col gap-1.5">
-            <button onclick="window.openDetailedOrgPopup('${org.id}')" class="w-full text-center py-1.5 bg-[#29B6BD] hover:bg-[#1d8e93] text-[10px] text-white font-bold rounded-md transition cursor-pointer shadow-2xs">
-              View details
+          <div class="pt-1 flex flex-col gap-1.5">
+            <button onclick="window.openDetailedOrgPopup('${org.id}')" class="w-full text-center py-1.5 bg-[#3EB049] hover:bg-[#32923c] text-[10px] text-white font-bold rounded-lg transition cursor-pointer shadow-2xs">
+              Read profile / details
             </button>
-            <button onclick="window.openContactPopup('${org.id}')" class="w-full text-center py-1 bg-white hover:bg-[#fbfbf9] border border-[#e1e1db] text-[9px] text-[#51615a] font-medium rounded-md transition cursor-pointer">
+            <button onclick="window.openContactPopup('${org.id}')" class="w-full text-center py-1 bg-white hover:bg-[#fbfbf9] border border-[#e1e1db] text-[9px] text-[#51615a] font-bold rounded-lg transition cursor-pointer">
               Send Message
             </button>
           </div>
@@ -1162,9 +1262,15 @@ export default function App() {
 
       marker.bindPopup(popupHtml, {
         closeButton: true,
-        autoPan: false,
+        autoPan: isSelected,
         offset: [0, -size / 2]
       });
+
+      if (isSelected) {
+        setTimeout(() => {
+          marker.openPopup();
+        }, 100);
+      }
 
       marker.on('mouseover', () => marker.openPopup());
 
@@ -3015,7 +3121,18 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => {
+                        setGapTypeFilter('Request');
+                        handleOpenAddGap();
+                      }}
+                      className="px-3.5 py-1.5 bg-[#3EB049] hover:bg-[#32923c] text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      <span>Post a need or matchmaking request</span>
+                    </button>
+
                     {showAllSubmissions && (
                       <div className="flex items-center bg-white border border-[#e1e1db] rounded-xl p-1 text-[11px]">
                         <button
@@ -3041,7 +3158,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                       onClick={() => setShowAllSubmissions(!showAllSubmissions)}
                       className="px-3.5 py-1.5 bg-[#29B6BD] hover:bg-[#1d8e93] text-white rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
                     >
-                      <span>{showAllSubmissions ? 'Collapse List' : `View All (${filteredGapsOffers.length})`}</span>
+                      <span>{showAllSubmissions ? 'Collapse List' : `View all (${filteredGapsOffers.length})`}</span>
                       <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAllSubmissions ? 'rotate-180' : ''}`} />
                     </button>
                   </div>
@@ -3078,6 +3195,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                           <tr>
                             <th className="p-3">Type / Category</th>
                             <th className="p-3">Title & Summary</th>
+                            <th className="p-3">Support Needed / Action</th>
                             <th className="p-3">Organisation</th>
                             <th className="p-3">Region & Stage</th>
                             <th className="p-3 text-right">Actions</th>
@@ -3091,6 +3209,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                             else if (item.type === 'Collaboration') badgeColor = 'bg-blue-50 border-blue-200 text-blue-700';
 
                             const itemRegion = item.region || getRegionForGapOffer(item);
+                            const ctaInfo = getCallToActionForItem(item);
 
                             return (
                               <tr key={item.id} className="hover:bg-slate-50 transition">
@@ -3102,6 +3221,11 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                                 <td className="p-3">
                                   <p className="font-bold text-[#1a2521] text-xs">{item.title}</p>
                                   <p className="text-[10px] text-[#51615a] line-clamp-1">{item.content}</p>
+                                </td>
+                                <td className="p-3 whitespace-nowrap">
+                                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md border ${ctaInfo.badgeBg} ${ctaInfo.badgeText} ${ctaInfo.badgeBorder}`}>
+                                    {ctaInfo.primarySupport}
+                                  </span>
                                 </td>
                                 <td className="p-3 whitespace-nowrap font-bold" style={{ color: getOahaOrgColorStyle(item.organization) }}>
                                   {item.organization || 'Individual partner'}
@@ -3115,7 +3239,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                                     onClick={() => setDetailedGap(item)}
                                     className="px-2.5 py-1 bg-[#29B6BD]/10 hover:bg-[#29B6BD]/20 text-[#176e73] font-bold rounded-lg text-[10px] transition cursor-pointer"
                                   >
-                                    Inspect
+                                    Respond / View
                                   </button>
                                 </td>
                               </tr>
@@ -3144,11 +3268,10 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                           const itemUrgency = item.urgency || getUrgencyForGapOffer(item);
                           const itemRegion = item.region || getRegionForGapOffer(item);
                           const isOahaPartner = !!item.workingWithOaha || (!!item.organization && baseOrganizations.some(o => o.name && o.name.toLowerCase() === item.organization.toLowerCase() && o.workingWithOaha));
+                          const ctaInfo = getCallToActionForItem(item);
+                          const fundingInfo = getFundingVisibilityAndRisk(item);
 
-                          let catColor = 'bg-slate-50 border-slate-200 text-slate-700';
-                          if (itemCategory === 'resource') catColor = 'bg-indigo-50 border-indigo-200 text-indigo-700';
-                          else if (itemCategory === 'job') catColor = 'bg-sky-50 border-sky-200 text-sky-700';
-                          else if (itemCategory === 'funding') catColor = 'bg-amber-50 border-amber-200 text-amber-700';
+                          let catColor = 'bg-gray-100 border-gray-200 text-gray-700';
 
                           let urgColor = itemUrgency === 'urgent' 
                             ? 'bg-rose-50 border-rose-200 text-rose-700 font-bold' 
@@ -3165,9 +3288,11 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                                     <span className={`text-[9px] px-1.5 py-0.5 rounded-md border capitalize font-medium ${catColor}`}>
                                       {itemCategory}
                                     </span>
-                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-md border capitalize font-medium ${urgColor}`}>
-                                      {itemUrgency}
-                                    </span>
+                                    {itemUrgency === 'urgent' && (
+                                      <span className={`text-[9px] px-1.5 py-0.5 rounded-md border capitalize font-medium ${urgColor}`}>
+                                        {itemUrgency}
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className="text-[9px] text-gray-400 font-mono">Stage: {item.assignedTab}</span>
@@ -3186,17 +3311,47 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                                 </div>
                                 
                                 <div className="space-y-1">
-                                  {itemRegion && (
-                                    <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 uppercase tracking-wide">
-                                      📍 {itemRegion.toUpperCase()} {selectedPlace === 'yorkshire' ? 'YORKSHIRE' : 'WALES'}
+                                  <div className="flex items-center justify-between gap-2">
+                                    {itemRegion && (
+                                      <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 uppercase tracking-wide">
+                                        📍 {itemRegion.toUpperCase()} {selectedPlace === 'yorkshire' ? 'YORKSHIRE' : 'WALES'}
+                                      </span>
+                                    )}
+                                    <span className="flex items-center gap-1 text-[8px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                      <span>Live Opportunity</span>
                                     </span>
-                                  )}
+                                  </div>
                                   <h4 className="text-xs font-bold text-[#1a2521] leading-snug">{item.title}</h4>
                                 </div>
                                 
-                                <p className="text-[11px] text-[#51615a] leading-relaxed line-clamp-3">
+                                <p className="text-[11px] text-[#51615a] leading-relaxed line-clamp-2">
                                   {item.content}
                                 </p>
+
+                                {/* OPPORTUNITY & SUPPORT NEEDED CALLOUT BOX */}
+                                <div className="p-2.5 bg-[#f8f8f6] border border-[#e5e5e0] rounded-xl space-y-2 mt-1">
+                                  <div>
+                                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#51615a] block mb-1">
+                                      Call to Action / Support Needed
+                                    </span>
+                                    <div className="flex flex-wrap gap-1">
+                                      {ctaInfo.supportTypes.map((st) => (
+                                        <span key={st} className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white text-[#1a2521] border border-[#d8d8d2] shadow-2xs">
+                                          {st}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* FUNDING VISIBILITY & PROVISION RISK */}
+                                  <div className="pt-2 border-t border-[#e5e5e0] flex flex-wrap items-center justify-between gap-1 text-[9px] text-[#51615a]">
+                                    <span>Funding: <strong className="text-[#1a2521]">{fundingInfo.fundingSource}</strong></span>
+                                    <span className={`px-1.5 py-0.5 rounded border font-bold ${fundingInfo.riskBadgeClass}`}>
+                                      Risk: {fundingInfo.riskLevel}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
 
                               <div className="pt-3 border-t border-[#e1e1db] flex items-center justify-between text-[10px] text-[#51615a]">
@@ -3215,10 +3370,10 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => setDetailedGap(item)}
-                                    className="text-[#29B6BD] hover:underline font-bold flex items-center gap-0.5 cursor-pointer"
+                                    className="px-2.5 py-1 bg-[#3EB049] hover:bg-[#32923c] text-white rounded-lg font-bold text-[10px] flex items-center gap-1 cursor-pointer transition shadow-2xs"
                                   >
                                     <Eye className="w-3 h-3" />
-                                    <span>View details</span>
+                                    <span>Respond</span>
                                   </button>
 
                                   {item.contactEmail && (
@@ -3558,8 +3713,18 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
 
                         <p className="text-[11px] text-[#1a2521] mt-2 font-medium">"{org.currentProject}"</p>
 
+                        {/* Delivery Geography & Sector Tags */}
+                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                          <span className="bg-[#f4f4f0] text-[#1a2521] border border-[#e1e1db] px-2 py-0.5 rounded-md text-[9px] font-bold flex items-center gap-1">
+                            📍 Delivery: {org.location || 'Regional Coverage'}
+                          </span>
+                          <span className="bg-gray-100 text-[#51615a] border border-gray-200 px-2 py-0.5 rounded-md text-[9px] font-medium">
+                            {org.sector}
+                          </span>
+                        </div>
+
                         <div className="mt-3 pt-2.5 border-t border-[#e1e1db] flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#51615a]">
-                          <span className="bg-gray-100 px-2 py-0.5 rounded text-[9px] font-medium">{org.sector}</span>
+                          <span className="text-[9px] font-medium text-[#51615a]">{org.capacityStatus}</span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -3644,17 +3809,18 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                       <th className="p-4 font-bold">Timescale</th>
                       <th className="p-4 font-bold">Stage Fit</th>
                       <th className="p-4 font-bold">Progress</th>
+                      <th className="p-4 font-bold">Funding & Risk</th>
                       <th className="p-4 font-bold text-right">Dependencies / Next steps</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#e1e1db]">
                     {loadingCommitments ? (
                       <tr>
-                        <td colSpan={7} className="p-8 text-center text-[#51615a]">Loading commitments...</td>
+                        <td colSpan={8} className="p-8 text-center text-[#51615a]">Loading commitments...</td>
                       </tr>
                     ) : filteredCommitments.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="p-8 text-center text-[#51615a]">No commitments logged match this progress or region filter.</td>
+                        <td colSpan={8} className="p-8 text-center text-[#51615a]">No commitments logged match this progress or region filter.</td>
                       </tr>
                     ) : (
                       filteredCommitments.map((item) => {
@@ -3664,6 +3830,8 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                         } else if (item.progress === 'Completed') {
                           statusColor = 'bg-blue-100 text-blue-800 border-blue-200';
                         }
+
+                        const fundInfo = getFundingVisibilityAndRisk(item);
 
                         return (
                           <tr key={item.id} className="hover:bg-slate-50/50 transition">
@@ -3680,6 +3848,14 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                               <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${statusColor}`}>
                                 {item.progress}
                               </span>
+                            </td>
+                            <td className="p-4 min-w-[130px]">
+                              <div className="space-y-1">
+                                <span className="block text-[10px] font-bold text-[#1a2521]">{fundInfo.fundingSource}</span>
+                                <span className={`inline-block text-[9px] font-extrabold px-1.5 py-0.5 rounded border ${fundInfo.riskBadgeClass}`}>
+                                  {fundInfo.riskLevel}
+                                </span>
+                              </div>
                             </td>
                             <td className="p-4 text-right text-[10px] text-[#51615a] max-w-xs space-y-1">
                               <p className="font-semibold text-[#1a2521]">Steps: {item.nextSteps || '—'}</p>
@@ -3770,6 +3946,8 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                       badgeColor = 'bg-amber-50 border-amber-200 text-amber-700';
                     }
 
+                    const fundInfo = getFundingVisibilityAndRisk(log);
+
                     return (
                       <div key={log.id} className="bg-white border border-[#e1e1db] rounded-2xl p-5 shadow-xs flex gap-4 hover:border-gray-300 transition duration-150 text-left">
                         <div className="flex-shrink-0 flex flex-col items-center">
@@ -3801,6 +3979,14 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                               {log.whatChanged}
                             </div>
                           )}
+
+                          {/* FUNDING VISIBILITY & PROVISION RISK */}
+                          <div className="pt-2 border-t border-[#e1e1db] flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#51615a]">
+                            <span>Funding Source: <strong className="text-[#1a2521]">{fundInfo.fundingSource}</strong></span>
+                            <span className={`px-2 py-0.5 rounded border font-bold text-[9px] ${fundInfo.riskBadgeClass}`}>
+                              Risk: {fundInfo.riskLevel}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -4526,8 +4712,8 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 <p>{detailedOrg.description}</p>
               </div>
 
-              {/* Strategic Role & Key Properties Card */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+              {/* Strategic Role & Ecosystem Status */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-[#f8f8f6] border border-[#e1e1db] rounded-2xl">
                 {detailedOrg.strategicRole && (
                   <div>
                     <span className="text-[10px] uppercase font-bold text-[#176e73] tracking-wider block">Strategic Role</span>
@@ -4538,31 +4724,144 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                 )}
                 <div>
                   <span className="text-[10px] uppercase font-bold text-[#51615a] tracking-wider block">Ecosystem Status</span>
-                  <span className="inline-block mt-1 px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold rounded-lg text-[11px]">
+                  <span className="inline-block mt-1 px-2.5 py-1 bg-white text-[#1a2521] border border-[#e1e1db] font-semibold rounded-lg text-[11px]">
                     {detailedOrg.capacityStatus}
                   </span>
                 </div>
               </div>
 
+              {/* PROGRAMME STATUS & HISTORY SECTION */}
+              <div className="p-4 bg-[#f8f8f6] border border-[#e1e1db] rounded-2xl space-y-3">
+                <div className="flex items-center justify-between border-b border-[#e1e1db] pb-2">
+                  <h4 className="font-bold text-[#1a2521] text-xs flex items-center gap-1.5">
+                    <Activity className="w-4 h-4 text-[#29B6BD]" />
+                    <span>Programme Status & Delivery History</span>
+                  </h4>
+                  <span className="text-[9px] font-bold text-[#176e73] uppercase tracking-wider">Ecosystem Registry</span>
+                </div>
+
+                {/* Delivery Geography */}
+                <div className="p-2.5 bg-white border border-[#e1e1db] rounded-xl space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-[#176e73] block">
+                    📍 Delivery Geography (Where Able to Deliver)
+                  </span>
+                  <p className="text-xs font-bold text-[#1a2521]">
+                    {detailedOrg.location} <span className="font-normal text-[#51615a]">({detailedOrg.address || 'Regional Coverage'})</span>
+                  </p>
+                  <p className="text-[10px] text-[#51615a]">
+                    Operational capability across {selectedPlace === 'yorkshire' ? 'Yorkshire and the Humber local authorities' : 'Wales 22 Local Authorities and regional clusters'}.
+                  </p>
+                </div>
+
+                {/* Status Breakdown Grid */}
+                <div className="space-y-2 pt-1">
+                  {/* 1. Active Now */}
+                  <div className="p-3 bg-white border border-[#e1e1db] rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#1a2521]">Delivering Now (Active)</span>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        Active Programme
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#1a2521] text-xs">"{detailedOrg.currentProject}"</p>
+                      {detailedOrg.solutions && detailedOrg.solutions.length > 0 && (
+                        <p className="text-[11px] text-[#51615a] mt-0.5">
+                          <strong>Active Interventions:</strong> {detailedOrg.solutions.join(' • ')}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Read More / Read Less Toggle */}
+                    {expandedActiveProg ? (
+                      <div className="pt-2 border-t border-[#e1e1db] space-y-2 text-[11px] text-[#51615a]">
+                        {detailedOrg.impact && (
+                          <div>
+                            <strong className="text-[#1a2521] block">Ecosystem Impact & Scope:</strong>
+                            <p className="mt-0.5 leading-relaxed">{detailedOrg.impact}</p>
+                          </div>
+                        )}
+                        {detailedOrg.description && (
+                          <div>
+                            <strong className="text-[#1a2521] block">Programme Overview:</strong>
+                            <p className="mt-0.5 leading-relaxed">{detailedOrg.description}</p>
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2 text-[10px] text-[#51615a] pt-1">
+                          <span className="px-2 py-0.5 bg-[#f8f8f6] border border-[#e1e1db] rounded font-medium">
+                            Stage: <strong>{detailedOrg.assignedTab}</strong>
+                          </span>
+                          <span className="px-2 py-0.5 bg-[#f8f8f6] border border-[#e1e1db] rounded font-medium">
+                            Contact: <strong>{detailedOrg.keyContact || 'Regional Lead'}</strong>
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => setExpandedActiveProg(false)}
+                          className="text-[10px] font-bold text-[#176e73] hover:underline cursor-pointer flex items-center gap-1 pt-1"
+                        >
+                          <span>Show less ↑</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setExpandedActiveProg(true)}
+                        className="text-[10px] font-bold text-[#3EB049] hover:underline cursor-pointer flex items-center gap-1 pt-0.5"
+                      >
+                        <span>Read more about active programme ↓</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 2. Past / Historical Activity */}
+                  <div className="p-2.5 bg-white border border-[#e1e1db] rounded-xl space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#51615a]">Previously Delivered (Past Activity)</span>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-300">
+                        Past (Searchable / Restartable)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#51615a]">
+                      Previous regional cohorts, completed pilot models, and baseline partner initiatives for {detailedOrg.assignedTab} stage.
+                    </p>
+                    <p className="text-[10px] text-[#51615a] italic">
+                      ℹ️ Note: Past activity remains indexed and searchable in the regional ledger so programmes can be swiftly reactivated when new funding or partner demand arises.
+                    </p>
+                  </div>
+
+                  {/* 3. Planned or Paused Status */}
+                  <div className="p-2.5 bg-white border border-[#e1e1db] rounded-xl space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#51615a]">Planned & Paused Activity</span>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                        Planned / Paused
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#51615a]">
+                      {detailedOrg.lookingForDetail ? `Seeking ${detailedOrg.lookingFor}: ${detailedOrg.lookingForDetail}` : `Open for co-funding and partner engagement to expand capacity for future cohorts.`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Strategic Partnerships & Regional Notes */}
               {(detailedOrg.partnerships || detailedOrg.notes) && (
-                <div className="space-y-3 p-4 bg-teal-50/40 border border-teal-100 rounded-2xl">
+                <div className="space-y-3 p-4 bg-[#f8f8f6] border border-[#e1e1db] rounded-2xl">
                   {detailedOrg.partnerships && (
                     <div>
-                      <h5 className="font-bold text-[#1a2521] text-[11px] flex items-center gap-1.5 mb-1">
-                        🤝 <span className="uppercase tracking-wider text-[10px] text-[#176e73]">Key Partnerships & Networks</span>
+                      <h5 className="font-bold text-[#1a2521] text-[11px] mb-1">
+                        Key Partnerships & Networks
                       </h5>
-                      <p className="text-[#2c3e35] text-[11px] leading-relaxed bg-white/80 p-2.5 rounded-xl border border-teal-100/80">
+                      <p className="text-[#51615a] text-[11px] leading-relaxed bg-white p-2.5 rounded-xl border border-[#e1e1db]">
                         {detailedOrg.partnerships}
                       </p>
                     </div>
                   )}
                   {detailedOrg.notes && (
                     <div>
-                      <h5 className="font-bold text-[#1a2521] text-[11px] flex items-center gap-1.5 mb-1">
-                        📝 <span className="uppercase tracking-wider text-[10px] text-amber-800">Ecosystem Notes & Insights</span>
+                      <h5 className="font-bold text-[#1a2521] text-[11px] mb-1">
+                        Ecosystem Notes & Insights
                       </h5>
-                      <p className="text-[#3a2f1c] text-[11px] leading-relaxed bg-amber-50/60 p-2.5 rounded-xl border border-amber-200/50">
+                      <p className="text-[#51615a] text-[11px] leading-relaxed bg-white p-2.5 rounded-xl border border-[#e1e1db]">
                         {detailedOrg.notes}
                       </p>
                     </div>
@@ -4577,7 +4876,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     <span className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider block mb-1.5">Thematic Areas Covered</span>
                     <div className="flex flex-wrap gap-1.5">
                       {detailedOrg.thematicAreas.map((area, idx) => (
-                        <span key={idx} className="px-2.5 py-0.5 bg-[#29B6BD]/10 border border-[#29B6BD]/30 text-[#176e73] font-semibold rounded-full text-[10px]">
+                        <span key={idx} className="px-2.5 py-0.5 bg-white border border-[#e1e1db] text-[#1a2521] font-semibold rounded-full text-[10px]">
                           {area}
                         </span>
                       ))}
@@ -4590,7 +4889,7 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                     <span className="text-[10px] font-bold text-[#1a2521] uppercase tracking-wider block mb-1.5">Learner Journey Stages (J1–J5)</span>
                     <div className="flex flex-wrap gap-1.5">
                       {detailedOrg.journeyStages.map((stage, idx) => (
-                        <span key={idx} className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold rounded-full text-[10px]">
+                        <span key={idx} className="px-2.5 py-0.5 bg-white border border-[#e1e1db] text-[#1a2521] font-semibold rounded-full text-[10px]">
                           {stage}
                         </span>
                       ))}
@@ -4602,64 +4901,46 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
               {/* OAHA alignment / partnership status box */}
               <div>
                 {detailedOrg.workingWithOaha ? (
-                  <div className="p-3.5 bg-amber-50/70 border border-amber-200 text-amber-800 rounded-2xl space-y-2">
-                    <div className="flex items-center gap-1.5 border-b border-amber-200/50 pb-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-amber-700 flex-shrink-0" />
-                      <span className="font-bold text-[10px] uppercase tracking-wider text-amber-900">OAHA partner</span>
+                  <div className="p-3.5 bg-[#f8f8f6] border border-[#e1e1db] rounded-2xl space-y-2">
+                    <div className="flex items-center gap-1.5 border-b border-[#e1e1db] pb-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-[#176e73] flex-shrink-0" />
+                      <span className="font-bold text-[10px] uppercase tracking-wider text-[#1a2521]">OAHA partner</span>
                     </div>
-                    <div className="space-y-1.5 text-[11px] text-amber-900">
+                    <div className="space-y-1.5 text-[11px] text-[#51615a]">
                       <div>
-                        <span className="block font-bold text-amber-950 text-[10px]">How we are working with OAHA:</span>
-                        <p className="text-amber-800 leading-relaxed mt-0.5">Deploying joint initiatives for the {detailedOrg.assignedTab.toLowerCase()} stage, specifically: {detailedOrg.currentProject.toLowerCase()}</p>
+                        <span className="block font-bold text-[#1a2521] text-[10px]">How we are working with OAHA:</span>
+                        <p className="leading-relaxed mt-0.5">Deploying joint initiatives for the {detailedOrg.assignedTab.toLowerCase()} stage, specifically: {detailedOrg.currentProject.toLowerCase()}</p>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-start gap-2 p-3 bg-gray-50 border border-gray-200 text-gray-600 rounded-2xl">
-                    <Info className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 p-3 bg-white border border-[#e1e1db] text-[#51615a] rounded-2xl">
+                    <Info className="w-4 h-4 text-[#51615a] flex-shrink-0 mt-0.5" />
                     <div className="text-[11px]">
-                      <p className="font-bold text-[10px] uppercase tracking-wider text-gray-800">Not directly partnered with OAHA</p>
-                      <p className="text-gray-500 mt-0.5 leading-relaxed">Independent participant in the wider Yorkshire stakeholder ecosystem.</p>
+                      <p className="font-bold text-[10px] uppercase tracking-wider text-[#1a2521]">Not directly partnered with OAHA</p>
+                      <p className="text-[#51615a] mt-0.5 leading-relaxed">Independent participant in the wider stakeholder ecosystem.</p>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="p-4 bg-slate-50 border border-gray-100 rounded-2xl space-y-2">
-                <h4 className="font-bold text-[#1a2521] flex items-center gap-1.5">
-                  <Activity className="w-4 h-4 text-[#29B6BD]" />
-                  <span>Current Active Regional Project / Initiative</span>
-                </h4>
-                <p className="font-medium text-[#1a2521]">"{detailedOrg.currentProject}"</p>
-                <p className="text-[11px] text-[#51615a]"><strong>Ecosystem Impact:</strong> {detailedOrg.impact}</p>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-bold text-[#1a2521]">Active Solutions Deployed for {detailedOrg.assignedTab}</h4>
-                <ul className="space-y-1.5 pl-4 list-disc text-[11px]">
-                  {detailedOrg.solutions.map((sol, index) => (
-                    <li key={index}>{sol}</li>
-                  ))}
-                </ul>
-              </div>
-
               <div className="grid grid-cols-2 gap-4 pt-2.5 border-t border-[#e1e1db] text-[11px]">
                 <div>
                   <span className="block font-bold text-[#1a2521]">Key Contact Point</span>
-                  <span className="text-slate-500">{detailedOrg.keyContact}</span>
+                  <span className="text-[#51615a]">{detailedOrg.keyContact}</span>
                 </div>
                 <div>
                   <span className="block font-bold text-[#1a2521]">Ecosystem Status</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold border text-[9px]">
+                  <span className="px-2 py-0.5 rounded-md bg-white text-[#1a2521] font-semibold border border-[#e1e1db] text-[9px]">
                     {detailedOrg.capacityStatus}
                   </span>
                 </div>
               </div>
 
               {detailedOrg.lookingForDetail && (
-                <div className="p-3.5 bg-amber-50/50 border border-amber-200/50 rounded-2xl text-[11px]">
-                  <strong className="text-[#986430] block">Ecosystem Request ({detailedOrg.lookingFor}):</strong>
-                  <p className="text-[#986430] mt-0.5">{detailedOrg.lookingForDetail}</p>
+                <div className="p-3.5 bg-[#f8f8f6] border border-[#e1e1db] rounded-2xl text-[11px]">
+                  <strong className="text-[#1a2521] block">Ecosystem Request ({detailedOrg.lookingFor}):</strong>
+                  <p className="text-[#51615a] mt-0.5">{detailedOrg.lookingForDetail}</p>
                 </div>
               )}
             </div>
@@ -4739,6 +5020,51 @@ CREATE POLICY "Allow public insert on learning" ON wales_evidence_learning FOR I
                   {detailedGap.content}
                 </p>
               </div>
+
+              {/* Active Opportunities & Calls to Action */}
+              {(() => {
+                const ctaInfo = getCallToActionForItem(detailedGap);
+                return (
+                  <div className="p-4 bg-gradient-to-r from-teal-50/80 to-emerald-50/80 border border-teal-200 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <h4 className="text-xs font-extrabold text-[#1a2521] uppercase tracking-wider">Live Programme — Active Opportunities</h4>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                        Open for Partner Action
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-[#51615a]">
+                      Employers, charities, and local stakeholders can support or participate through the following active opportunities:
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {ctaInfo.supportTypes.map((st) => (
+                        <span key={st} className="px-2.5 py-1 bg-white border border-teal-200 rounded-xl text-xs font-bold text-[#176e73] shadow-2xs">
+                          {st}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-between border-t border-teal-200/60">
+                      <span className="text-[10px] text-gray-500 font-medium">Ready to support, host, fund, or refer?</span>
+                      <button
+                        onClick={() => {
+                          const body = `Hi ${detailedGap.submittedBy || 'Partner'},\n\nI am contacting you regarding your live opportunity: "${detailedGap.title}" on the ${(detailedGap.place || selectedPlace) === 'yorkshire' ? 'Yorkshire' : 'Wales'} Ecosystem Mapping platform.\n\nWe are interested in supporting this programme through:\n- [ ] Volunteering / Mentoring\n- [ ] Hosting Work Experience / Placements\n- [ ] Funding / Co-investment\n- [ ] Referring Young People / Learners\n- [ ] Delivering / Partnering on Programme\n\nPlease let us know the best next steps.\n\nBest regards,\n[Your Name]`;
+                          setDetailedGap(null);
+                          handleOpenContact({ id: 'org-gap-relay', name: detailedGap.organization || 'Partner' } as any, body);
+                        }}
+                        className="px-3.5 py-1.5 bg-[#3EB049] hover:bg-[#32923c] text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        <span>Respond to Opportunity</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* metadata card: Contact and OAHA Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
