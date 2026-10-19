@@ -91,7 +91,7 @@ export interface TabInfo {
   badgeColor: string;
 }
 
-export type SubmissionType = 'Gap' | 'Offer' | 'Request' | 'Collaboration' | 'Evidence';
+export type SubmissionType = 'Gap' | 'Offer' | 'Request' | 'Collaboration' | 'Evidence' | 'Activity' | 'Project';
 
 export interface GapOfferRequest {
   id: string;
@@ -102,7 +102,8 @@ export interface GapOfferRequest {
   contactEmail: string;
   content: string;
   assignedTab: FrictionPoint;
-  region?: 'north' | 'mid' | 'southwest' | 'southeast';
+  place?: 'wales' | 'yorkshire' | string;
+  region?: 'north' | 'mid' | 'southwest' | 'southeast' | 'west' | 'south' | 'east' | string;
   category?: 'resource' | 'job' | 'funding' | 'others';
   urgency?: 'urgent' | 'not urgent';
   thematicArea?: ThematicAreaType | string;
@@ -121,7 +122,7 @@ export interface Commitment {
   nextSteps: string;
   dependencies: string;
   assignedTab: FrictionPoint;
-  region?: 'north' | 'mid' | 'southwest' | 'southeast';
+  region?: 'north' | 'mid' | 'southwest' | 'southeast' | 'west' | 'south' | 'east' | string;
   createdAt?: string;
 }
 
@@ -132,7 +133,7 @@ export interface EvidenceLearning {
   assignedTab: FrictionPoint;
   description: string;
   whatChanged: string;
-  region?: 'north' | 'mid' | 'southwest' | 'southeast';
+  region?: 'north' | 'mid' | 'southwest' | 'southeast' | 'west' | 'south' | 'east' | string;
   createdAt?: string;
 }
 
@@ -143,7 +144,7 @@ export interface UserProfile {
   contactEmail: string;
   contactPhone?: string;
   website?: string;
-  region?: 'north' | 'mid' | 'southwest' | 'southeast';
+  region?: 'north' | 'mid' | 'southwest' | 'southeast' | 'west' | 'south' | 'east' | string;
   description?: string;
   sector?: SectorType | 'Other' | string;
   savedItems?: string[]; // IDs of saved Gaps/Offers
